@@ -100,9 +100,9 @@ def _get_best_track(tracks, partial, gap, acceptabledist):
     return best
 
     
-def partials_pack(partials, numtracks=0, gap=0.010, acceptabledist=0.100):
+def partials_pack(partials, numtracks=0, gap=0.010, fade=0.005, acceptabledist=0.100):
     """
-    Pack non-simulatenous partials into longer partials with
+    Pack non-simultenous partials into longer partials with
     silences in between. These packed partials can be used
     as tracks for resynthesis, minimizing the need
     of oscillators. 
@@ -113,14 +113,18 @@ def partials_pack(partials, numtracks=0, gap=0.010, acceptabledist=0.100):
     numtracks: if > 0, sets the maximum number of tracks.
                Partials not fitting in will be discarded
     gap: minimum gap between partials in a track
+    fade: apply a fade to the partials before joining them
     acceptabledist: instead of searching for the best possible
                     fit, pack two partials together if they are
                     near enough
 
     NB: amplitude is always faded out between partials
+
+    See also: partials_save_as_sndfile
     """
+
     tracks = []
-    fade = 0.008  # loris uses 5 ms
+    # fade = 0.008  # loris uses 5 ms
     gap = max(gap, fade*2)
 
     def join_track(partials, fade):
@@ -144,10 +148,13 @@ def partials_pack(partials, numtracks=0, gap=0.010, acceptabledist=0.100):
     return partials
 
 
-def partials_sample(sp, dt=64/48000, t0=None, t1=None, interleave=True):
+def partials_sample(sp, dt=0.002, t0=None, t1=None, interleave=True):
     # type: (Spectrum, float) -> Tuple[np.ndarray, np.ndarray, np.ndarray]
     """
-    Samples the partials between t0 and t1. 
+    Samples the partials between t0 and t1. This is thought to be used
+    in connection with `partials_pack`, which packs short non-simultaneous 
+    partials into longer ones. The result is a 2D matrix representing
+    the partials
 
     Given ts = arange(t0, t1, dt)
 
@@ -158,8 +165,9 @@ def partials_sample(sp, dt=64/48000, t0=None, t1=None, interleave=True):
      ... 
     ]
 
-    Where f0, amp0, bw0 represent the freq, amp and bw of partial 0 
-    at a given time
+    Where (f0, amp0, bw0) represent the freq, amp and bw of partial 0 
+    at a given time, (f1, amp1, bw0) the corresponding data for partial 1,
+    etc.
 
     * If interleave is False, it returns three arrays: freqs, amps, bws
       of the form
@@ -199,14 +207,23 @@ def partials_sample(sp, dt=64/48000, t0=None, t1=None, interleave=True):
 
 
 def partial_start(p):
+    """
+    p: a numpy array representing a Partial.
+    """
     return p[0, 0]
 
 
 def partial_dur(p):
+    """
+    p: a numpy array representing a Partial
+    """
     return p[-1, 0] - p[0, 0]
 
 
 def partial_meanamp(p):
+    """
+    p: a numpy array representing a Partial
+    """
     # todo: Use the times to perform an integration rather than
     # just returning the mean of the amps
     return p[:,2].mean()

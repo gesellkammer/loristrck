@@ -2,9 +2,9 @@
 LORISTRCK
 =========
 
-This is the simplest wrapper possible for the partial-tracking library Loris. 
-The source of the library is included as part of the project, so there is no need
-to install the library independently. 
+`loristrck` is a simple python wrapper for the C++ partial-tracking library Loris. It is written in cython and targets python 3.
+The source of the library is included as part of the project installed alongside to avoid version mismatches
+
 
 C++ Library Dependencies:
   * fftw3_
@@ -13,10 +13,11 @@ C++ Library Dependencies:
 
 
 Additional Python Module Dependencies:
-  * Python (>= 2.7.*)
+  * Python 3
   * Cython_
   * NumPy
   * SciPy
+  * pysndfile + libsndfile (optional)
 
 .. _Cython: http://cython.org
 
@@ -25,19 +26,20 @@ Installation
 ------------
 
 1) If you haven't, install FFTW3. Loris depends on it to perform in an acceptable way
+
     * OSX
         + the best alternative is to install via homebrew
     * Linux
-        + you probably already have fftw3
+        + you probably already have fftw3. If not, install through your package manager. For Ubuntu: `sudo apt install libfftw3-dev`
     * Windows
         + go to http://www.fftw.org/install/windows.html
         + download the 32-bit binary package
         + unzip to a directory of your choice. 
-          Suggestion: `C:\src`. You should have then a folder `C:\src\fftw` 
+          Suggestion: `C:\\src`. You should have then a folder `C:\\src\\fftw` 
         + put that directory in your PATH 
           (Control Panel/System/Advanced/Environmental Variables/)
-        + If you unzipped to any folder other than `C:\src`, pass that directory to
-          the setup.py script as `python setup.py install -LC:\my\path\to\fftw`
+        + If you unzipped to any folder other than `C:\\src`, pass that directory to
+          the setup.py script as `python setup.py install -LC:\\my\\path\\to\\fftw`
 
 
 2) To build and install everything, from the root folder run:

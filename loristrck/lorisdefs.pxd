@@ -119,11 +119,11 @@ cdef extern from "../src/loris/src/Fundamental.h" namespace "Loris":
             double lowerFreqBound, double upperFreqBound,
             double confidenceThreshold)
 
-cdef extern from "../src/loris/src/loris.h": #  namespace "Loris":
-    void resample( PartialList * partials, double interval )
-    void shapeSpectrum( PartialList * partials, PartialList * surface,
-                        double stretchFreq, double stretchTime )
-    void collate( PartialList * partials );
+# cdef extern from "../src/loris/src/loris.h": #  namespace "Loris":
+#    void resample( PartialList * partials, double interval )
+#    void shapeSpectrum( PartialList * partials, PartialList * surface,
+#                        double stretchFreq, double stretchTime )
+#    void collate( PartialList * partials );
 
 cdef extern from "../src/loris/src/Oscillator.h":
     cppclass Oscillator:
@@ -136,4 +136,8 @@ cdef extern from "../src/loris/src/Oscillator.h":
         double radianFreq()
         void oscillate(double * begin, double * end, const Breakpoint &bp, double srate)
 
+#cdef extern from "../src/loris/src/Collator.h":
+#    cppclass Collator:
+#        Collator( double partialFadeTime, double partialSilentTime )
+#        Partial_Iterator collate( PartialList & partials )
     

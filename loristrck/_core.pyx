@@ -17,12 +17,8 @@ import sys
 
 ctypedef _np.float64_t SAMPLE_t
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger("loristrck")
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.DEBUG)
-logger.addHandler(ch)
-
+    
 _np.import_array()
 
 def analyze(double[::1] samples not None, double sr, double resolution, double windowsize= -1, 
@@ -273,8 +269,8 @@ cdef class PartialListW:
     def __len__(self):
         return self.thisptr.size()
 
-    def collate(self):
-        loris.collate(self.thisptr)
+    # def collate(self):
+    #    loris.collate(self.thisptr)
 
 
 cpdef PartialListW newPartialListW(dataseq, labels=None, double fadetime=0):
@@ -331,7 +327,7 @@ def write_sdif(partials, outfile, labels=None, rbep=True, double fadetime=0):
     labels: a seq. of integer labels, or None to skip saving labels
     rbep: if True, use RBEP format, otherwise, 1TRC
 
-    NB: The 1TRC format forces resampling
+    NB: The 1TRC format forces resampling 
     """
     assert _isiterable(partials)
     cdef PartialListW plist = newPartialListW(partials, labels, fadetime)
@@ -587,7 +583,16 @@ def estimatef0(matrices, double minfreq, double maxfreq, double interval):
     out = PartialList_estimatef0_with_confidence(plist.thisptr, minfreq, maxfreq, interval)
     del plist
     return out
-    
+
+
+#def collate(matrices, double fadetime, double gaptime):
+#    cdef loris.Collator *coll = new loris.Collator(fadetime, gaptime)
+#    cdef PartialListW plist = newPartialListW(matrices, 0)
+#    coll.collate(plist.thisptr)
+#    out = PartialList_toarray(plist.thisptr)
+#    del plist
+#    return out
+
 
 cdef long arange_numelements(double x0, double x1, double step):
     return <long>(ceil((x1-x0)/step))

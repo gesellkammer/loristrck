@@ -78,6 +78,8 @@ if sys.platform == 'darwin':
     # Macports support
     append_if_exists(include_dirs, '/opt/local/include')
     append_if_exists(library_dirs, '/opt/local/lib')
+elif sys.platform == 'linux2':
+    os.environ['CC'] = "ccache gcc"
 ######################################
 # Windows
 ######################################
@@ -112,9 +114,9 @@ loris_exclude += [os.path.join(loris_base, filename) for filename in (
     "Dilator.C",
     "Morpher.C",
     "SpectralSurface.C",
-    # "lorisNonObj_pi.C",
+    "lorisNonObj_pi.C",
     "Channelizer.C",
-    "Distiller.C",
+    # "Distiller.C",
     "PartialUtils.C",
     "lorisUtilities_pi.C",
     "lorisPartialList_pi.C",
