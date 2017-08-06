@@ -46,9 +46,7 @@ Windows
   If you unzipped to any folder other than ``c:\\src``, pass that directory to
   the setup.py script as ``python setup.py install -LC:\\my\\path\\to\\fftw``
 
-2) Download and install
-
-::
+2) Download and install::
 
    git clone https://github.com/gesellkammer/loristrck
    cd loristrck
@@ -60,7 +58,8 @@ Windows
 Usage
 =====
 
-::
+.. code-block:: python
+
    import pysndfile
    import loristrck
 
