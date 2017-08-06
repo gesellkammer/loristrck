@@ -13,34 +13,33 @@ C++ Library Dependencies:
 
 
 Additional Python Module Dependencies:
-  * Python 3
-  * Cython_
-  * NumPy
-  * SciPy
-  * pysndfile + libsndfile (optional)
 
-.. _Cython: http://cython.org
+  * Cython
+  * NumPy
+  * pysndfile + libsndfile (optional)
 
 
 Installation
 ------------
 
-1) If you haven't, install FFTW3. Loris depends on it to perform in an acceptable way
+1) If you haven't, install FFTW3 and libsndfile. Loris depends on fftw3 to perform in an acceptable way
 
 * OSX
-    + the best alternative is to install via homebrew
+  + the best alternative is to install via homebrew
 * Linux
-    + you probably already have fftw3. If not, install through your package manager.
-    + For Ubuntu: `sudo apt install libfftw3-dev`
+  + Install through your package manager.
+  + For Ubuntu: ``sudo apt install libfftw3-dev libsndfile1-dev``
 * Windows
-    + go to http://www.fftw.org/install/windows.html
-    + download the 32-bit binary package
-    + unzip to a directory of your choice. 
-      Suggestion: `C:\\src`. You should have then a folder `C:\\src\\fftw` 
-    + put that directory in your PATH 
+  + Install ``libsndfile`` from http://www.mega-nerd.com/libsndfile/#Download
+  + Install ``fftw3``
+    - Go to http://www.fftw.org/install/windows.html
+    - Download the 32-bit binary package
+    - Unzip to a directory of your choice. 
+      Suggestion: ``C:\\src``. You should have then a folder ``C:\\src\\fftw`` 
+    - Put that directory in your PATH 
       (Control Panel/System/Advanced/Environmental Variables/)
-    + If you unzipped to any folder other than `C:\\src`, pass that directory to
-      the setup.py script as `python setup.py install -LC:\\my\\path\\to\\fftw`
+    - If you unzipped to any folder other than ``c:\\src``, pass that directory to
+      the setup.py script as ``python setup.py install -LC:\\my\\path\\to\\fftw``
 
 
 2) Download and install
