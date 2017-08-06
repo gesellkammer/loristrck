@@ -17,25 +17,25 @@ import os
 import sys
 import glob
 from setuptools import setup, Extension
-import numpy
+
+try:
+    import numpy
+except ImportError:
+    print(
+        "numpy is necessary to build this package." 
+        "Please install it on your own and try again."
+    )
+    sys.exit()
 
 try:
     from Cython.Distutils import build_ext
+    
 except ImportError:
-    setup(
-        install_requires=[
-            'cython>=0.25',
-            'numpy>1.5'
-        ]
-    )
-    try:
-        from Cython.Distutils import build_ext
-    except ImportError:
-        print("Cython is necessary to build this package.")
-        print("An attempt to install Cython just failed.")
-        print("Please install it on your own and try again.")
-        sys.exit()
-
+    print(
+        "Cython is necessary to build this package." 
+        "Please install it on your own and try again.")
+    sys.exit()
+        
 
 # -----------------------------------------------------------------------------
 # Global
@@ -158,7 +158,7 @@ setup(
     packages=['loristrck'],
     install_requires=[
         'numpy>=1.8',
-        'scipy>=0.11',
+        # 'scipy>=0.11',
         'cython>=0.20',
         'numpyx',
         'pysndfile'

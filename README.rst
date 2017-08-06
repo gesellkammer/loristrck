@@ -27,56 +27,56 @@ Installation
 
 1) If you haven't, install FFTW3. Loris depends on it to perform in an acceptable way
 
-    * OSX
-        + the best alternative is to install via homebrew
-    * Linux
-        + you probably already have fftw3. If not, install through your package manager. For Ubuntu: `sudo apt install libfftw3-dev`
-    * Windows
-        + go to http://www.fftw.org/install/windows.html
-        + download the 32-bit binary package
-        + unzip to a directory of your choice. 
-          Suggestion: `C:\\src`. You should have then a folder `C:\\src\\fftw` 
-        + put that directory in your PATH 
-          (Control Panel/System/Advanced/Environmental Variables/)
-        + If you unzipped to any folder other than `C:\\src`, pass that directory to
-          the setup.py script as `python setup.py install -LC:\\my\\path\\to\\fftw`
+* OSX
+    + the best alternative is to install via homebrew
+* Linux
+    + you probably already have fftw3. If not, install through your package manager.
+    + For Ubuntu: `sudo apt install libfftw3-dev`
+* Windows
+    + go to http://www.fftw.org/install/windows.html
+    + download the 32-bit binary package
+    + unzip to a directory of your choice. 
+      Suggestion: `C:\\src`. You should have then a folder `C:\\src\\fftw` 
+    + put that directory in your PATH 
+      (Control Panel/System/Advanced/Environmental Variables/)
+    + If you unzipped to any folder other than `C:\\src`, pass that directory to
+      the setup.py script as `python setup.py install -LC:\\my\\path\\to\\fftw`
 
 
-2) To build and install everything, from the root folder run:
+2) Download and install
 
 ::
 
-    $ python setup.py install
-    
+   git clone https://github.com/gesellkammer/loristrck
+   cd loristrck
+   pip install -r requirements.txt
+   pip install .
+
+
+
 Usage
 -----
 
 ::
+   import pysndfile
+   import loristrck
 
-    from loristrck import analyze
-    sndfile = read_sndfile("/path/to/mono_sndfile.wav")
-    partials = analyze(sndfile.samples, sndfile.sr, resolution=50, window_width=80)
-    for label, data in partials:
-        print data
+   sndfile = pysndfile.PySndfile("/path/to/monosnd.wav")
+   samples = sndfile.read_frames()
+   sr = samplerate()
+   partials = loristrck.analyze(samples, sr, resolution=40)
+   # partials is a python list of numpy arrays
+   for partial in partials:
+       print(partial)
 
-data will be a numpy array of shape = (numframes, 5) with the columns::
+
+Each partial will be a numpy array of shape = (numbreakpoints, 5)
+with the columns::
 
   time . frequency . amplitude . phase . bandwidth
 
-Goal
-----
 
-The main goal was as an analysis tool for the package `sndtrck`, which implements
-an agnostic data structure to handle partial tracking information. So if `sndtrck`
-is installed, it can be used as::
-
-    >>> import sndtrck
-    >>> spectrum = sndtrck.analyze_loris("/path/to/sndfile", resolution=50)
-    >>> print spectrum.chord_at(0.5)
-    [A3+, C5+10, E5-13]
-    >>> spectrum.plot()  # this will generate a matplotlib plot of the partials
-
-Credits
--------
+Author
+------
 
 eduardo dot moguillansky @ gmail dot com
