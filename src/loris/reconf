@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+# <loris@cerlsoundgroup.org>
+
+#  
+# This file is free software; as a special exception the author gives
+# unlimited permission to copy and/or distribute it, with or without 
+# modifications, as long as this notice is preserved.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+rm -f config.cache
+rm -f acconfig.h
+mkdir -p config
+echo "- glibtoolize (automake doesn't always work)"
+glibtoolize --force --automake --copy
+echo "- aclocal."
+aclocal -I config
+echo "- autoconf."
+autoconf
+# echo "- acconfig."
+# acconfig
+echo "- autoheader."
+autoheader
+echo "- automake."
+automake --foreign --add-missing --force-missing --copy
+exit

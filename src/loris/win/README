@@ -1,0 +1,4 @@
+This directory contains Visual Studio (2008) project files that can be
+used to build the Loris Python module and the morph test program (in the
+test directory) under windows. Neither of these builds or uses the Loris
+library, each includes all the Loris sources directly.

@@ -1,0 +1,11 @@
+*.egg*
+build/
+dist/
+*.o
+*.lo
+*.la
+*.cache
+*.pyc
+*.bak
+*.so
+loristrck/*.cpp
