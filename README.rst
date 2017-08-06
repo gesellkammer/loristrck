@@ -13,7 +13,6 @@ C++ Library Dependencies:
 
 
 Additional Python Module Dependencies:
-
   * Cython
   * NumPy
   * pysndfile + libsndfile (optional)
@@ -23,7 +22,6 @@ Installation
 ------------
 
 1) If you haven't, install FFTW3 and libsndfile. Loris depends on fftw3 to perform in an acceptable way
-
  * OSX
    + the best alternative is to install via homebrew
  * Linux
