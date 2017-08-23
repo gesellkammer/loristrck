@@ -29,7 +29,7 @@ except ImportError:
 
 try:
     from Cython.Distutils import build_ext
-    
+
 except ImportError:
     print(
         "Cython is necessary to build this package." 
@@ -59,7 +59,8 @@ include_dirs = [
 
 library_dirs = []
 libs = ['m', 'fftw3']
-compile_args = ['-DMERSENNE_TWISTER', '-DHAVE_FFTW3_H']
+compile_args = ['-DMERSENNE_TWISTER', '-DHAVE_FFTW3_H', 
+                '-g', '-std=c++11']
 
 
 def append_if_exists(seq, folder):
@@ -116,14 +117,14 @@ loris_exclude += [os.path.join(loris_base, filename) for filename in (
     "SpectralSurface.C",
     "lorisNonObj_pi.C",
     "Channelizer.C",
-    # "Distiller.C",
+    "Distiller.C",
     "PartialUtils.C",
     "lorisUtilities_pi.C",
     "lorisPartialList_pi.C",
     "lorisAnalyzer_pi.C",
     "lorisBpEnvelope_pi.C",
     "Harmonifier.C",
-    # "Collator.C",
+    "Collator.C",
     "lorisException_pi.C"
 )]
 
@@ -152,7 +153,7 @@ setup(
     author='Eduardo Moguillansky',
     author_email='eduardo.moguillansky@gmail.com',
     platforms=['Linux', 'Mac OS-X', 'Unix', 'Windows'],
-    version='0.6.0',
+    version='0.7.0',
     ext_modules=[loris],
     cmdclass={'build_ext': build_ext},
     packages=['loristrck'],

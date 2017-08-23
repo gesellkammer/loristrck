@@ -30,6 +30,8 @@ cdef extern from "../src/loris/src/Partial.h" namespace "Loris":
         double phaseAt( double time )
         void fadeIn( double fadeTime )
         void fadeOut( double fadeTime )
+        void clear()
+        Partial_Iterator erase(Partial_Iterator, Partial_Iterator)
         
     cppclass Partial_Iterator "Loris::Partial_Iterator":
         Breakpoint & breakpoint()
@@ -37,14 +39,14 @@ cdef extern from "../src/loris/src/Partial.h" namespace "Loris":
         bint operator== (Partial_Iterator)
         bint operator!= (Partial_Iterator)
         Partial_Iterator operator++()
-
+        
 cdef extern from "../src/loris/src/PartialList.h" namespace "Loris":
     cppclass PartialListIterator "Loris::PartialListIterator"
     cppclass PartialList "Loris::PartialList":
         PartialListIterator begin()
         PartialListIterator end()
+        PartialListIterator erase(PartialListIterator, PartialListIterator);
         void push_back(Partial& p)
-        void pop_front()
         Partial& front()
         void clear()
         bint empty()
@@ -53,8 +55,12 @@ cdef extern from "../src/loris/src/PartialList.h" namespace "Loris":
     cppclass PartialListIterator "Loris::PartialListIterator":
         bint operator== (PartialListIterator)
         bint operator!= (PartialListIterator)
-        Partial operator* ()
+        Partial& operator* ()
         PartialListIterator operator++()
+        #PartialListIterator begin()
+        #PartialListIterator end()
+        #PartialListIterator erase(PartialListIterator, PartialListIterator);
+        
 
 
 cdef extern from "../src/loris/src/Analyzer.h" namespace "Loris":
