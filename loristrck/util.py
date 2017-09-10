@@ -105,7 +105,8 @@ def _join_track(partials, fade):
     assert fade > 0
     p = concat(partials, fade=fade, edgefade=fade)
     assert npx.array_is_sorted(p[:,0])
-    assert p[0, 2] == 0
+    if p[0, 0] > 0:
+        assert p[0, 2] == 0
     assert p[-1, 2] == 0
     return p
 
@@ -309,7 +310,8 @@ def select(partials, mindur=0, minamp=-120, maxfreq=24000, minfreq=0,
     return selected, unselected
 
 
-def matrix_save_as_sndfile(m, sndfile, dt, t0=0, bits=32, header=True):
+def matrix_save_as_sndfile(m, sndfile, dt, t0=0, bits=32, 
+                           header=True, metadata=True):
     """
     Save the raw data in m as a float32 soundfile. This is not a real 
     soundfile but it is used to transfer the data in binary form to be 
@@ -324,7 +326,9 @@ def matrix_save_as_sndfile(m, sndfile, dt, t0=0, bits=32, header=True):
     t0     : the start time of the sampled partials
     bits   : 32 or 64. 32 bits should be enough
     header : if True, a header is included with the format
-             [dataOffset, dt, numcols, numrows, t0]      
+             [dataOffset, dt, numcols, numrows, t0]
+    metadata: If True, metadata is included which duplicates the 
+              data of the header in string form.    
 
     Each row corresponds to a sample of all partials, the time of 
     each row can be determined by
@@ -361,11 +365,17 @@ def matrix_save_as_sndfile(m, sndfile, dt, t0=0, bits=32, header=True):
     f = pysndfile.PySndfile(sndfile, mode="w", format=fmt, channels=1, 
                             samplerate=44100)
     numrows, numcols = m.shape
+    if metadata:
+        metastr = b"DataStart=%d, SamplingPeriod=%f, NumCols=%d, NumRows=%d, TimeStart=%f" % \
+                  (5, dt, numcols, numrows, t0)
+        f.set_string("SF_STR_COMMENT", metastr)
+        f.set_string("SF_STR_SOFTWARE", b"loristrck")
     if header:
         header_array = np.array([5, dt, numcols, numrows, t0], dtype=float)
         f.write_frames(header_array)
     mflat = m.ravel()
     f.write_frames(mflat)
+    f.writeSync()
 
 
 def pack_and_save(partials, dt, sndfile):
@@ -374,6 +384,13 @@ def pack_and_save(partials, dt, sndfile):
     at period `dt` and saved the resulting matrix to a soundfile
     (wav or aif)
 
+    partials: a list of numpy 2D-arrays, each representing a partial
+    dt      : sampling period to sample the packed partials
+    sndfile : path to save the sampled partials. The data is saved
+              as an uncompressed soundfile of .wav of .aif format.
+
+    Returns: the packed spectrum
+
     Example
     =======
 
@@ -381,7 +398,8 @@ def pack_and_save(partials, dt, sndfile):
     selected, _ = select(partials, minbps=2, mindur=0.005)
     pack_and_save(partials, 0.002, "packed.wav")
     """
-    packed = pack(partials, dt*3)
+    packed = pack(partials, gap=dt*3)
     m = partials_sample(packed, dt=dt)
     t0 = min(p[0, 0] for p in partials)
     matrix_save_as_sndfile(m, sndfile, dt=dt, t0=t0, bits=32)
+    return packed
