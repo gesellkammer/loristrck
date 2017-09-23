@@ -14,6 +14,7 @@ from numpy.math cimport INFINITY
 from libc.math cimport ceil
 import logging
 import sys
+import os
 
 ctypedef _np.float64_t SAMPLE_t
 
@@ -23,8 +24,9 @@ _np.import_array()
   
 def analyze(double[::1] samples not None, double sr, double resolution, double windowsize= -1, 
             double hoptime =-1, double freqdrift =-1, double sidelobe=-1,
-            double ampfloor=-90, double croptime=-1, outfile=None):
-
+            double ampfloor=-90, double croptime=-1, 
+            double residuebw=-1, double convergencebw=-1,
+            outfile=None):
     """
     Partial Tracking Analysis
     =========================
@@ -58,23 +60,33 @@ def analyze(double[::1] samples not None, double sr, double resolution, double w
     * hoptime: sec
         The time to move the window after each analysis. 
         Default: 1/windowWidth. "hop time in secs is the inverse of the window width
-        really. Smith and Serra say: a good choice of hop is the window length
-        divided by the main lobe width in freq. samples, which turns out to be 
-        just the inverse of the width.
+        really. A good choice of hop is the window length divided by the main lobe width 
+        in freq. samples, which turns out to be just the inverse of the width.
     * freqdrift: Hz  
         The maximum variation of frecuency between two breakpoints to be
         considered to belong to the same partial. A sensible value is
         between 1/2 to 3/4 of resolution
-    * sidelobe: dB
+    * sidelobe: dB (default: 90 dB)
         A positive dB value, indicates the shape of the Kaiser window
-        (typical value: 90 dB)
     * ampfloor: dB  
-        A breakpoint with an amplitude lower than this value will not 
-        be considered
-    * croptime: secs. Is the max. time correction beyond which a seassigned 
-        spectral component is considered inreliable, and not eligible for
-        breakpoint formation. Default: the hop time. Should it be half that?
-    
+        A breakpoint with an amp < ampfloor can't be part of a partial
+    * croptime: sec 
+        Max. time correction beyond which a reassigned bp is considered 
+        unreliable, and not eligible. Default: the hop time. Should it be half that?
+    * residuebw: Hz (default = 2000 Hz)
+        Construct Partial bandwidth env. by associating residual 
+        energy with the selected spectral peaks that are used to construct Partials.
+        The bandwidth is the width (in Hz) association regions used.
+        Defaults to 2 kHz, corresponding to 1 kHz region center spacing.
+        NB: if residuebw is set, convergencebw must be left unset
+    * convergencebw: range [0, 1]
+        Construct Partial bandwidth env. by storing the 
+        mixed derivative of short-time phase, scaled and shifted.  
+        The value is the amount of range over which the mixed derivative 
+        indicator should be allowed to drift away from a pure sinusoid 
+        before saturating. This range is mapped to bandwidth values on 
+        the range [0,1].  
+        NB: one can set residuebw or convergencebw, but not both
     """
     if windowsize < 0:
         windowsize = resolution * 2  # original Loris behaviour
@@ -89,6 +101,13 @@ def analyze(double[::1] samples not None, double sr, double resolution, double w
     if croptime > 0:
         an.setCropTime( croptime )
     an.setAmpFloor(ampfloor)
+    if residuebw >= 0:
+        if convergencebw >= 0:
+            logger.error("Only one of residuebw or convergencebw can be set, not both")
+        an.storeResidueBandwidth(residuebw)
+    elif convergencebw >= 0:
+        an.storeConvergenceBandwidth(convergencebw)
+
     logger.info("analysis: windowsize={0}, hoptime={1}, freqDrift={2}".format(
         an.windowWidth(), an.hopTime(), an.freqDrift()))
 
@@ -221,6 +240,9 @@ def read_sdif(path):
     """
     cdef loris.SdifFile* sdif
     cdef loris.PartialList partials
+    path = os.path.abspath(os.path.expanduser(path))
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"read_sdif: {path} not found")
     if not isinstance(path, bytes):
         path = path.encode("ASCII", errors="ignore")
     cdef string filename = string(<char*>path)
@@ -422,7 +444,7 @@ cdef object PartialList_timespan(loris.PartialList * partials):
     return tmin, tmax
 
 
-def synthesize(dataseq, int samplerate, double fadetime=-1):
+def synthesize(dataseq, int samplerate, double fadetime=-1, double start=-1, double end=-1):
     """
     dataseq:    a seq. of 2D matrices, each matrix represents a partial
                 Each row is a breakpoint of the form [time freq amp phase bw]
@@ -430,46 +452,83 @@ def synthesize(dataseq, int samplerate, double fadetime=-1):
     samplerate: the samplerate of the synthesized samples (Hz)
     
     fadetime:   to avoid clicks, partials not ending in 0 amp should be faded
-                If negative, a sensible default is used (seconds)
+                If negative, a sensible default is used (currently about 3 ms). 
+                A minimum fadetime is always applied, even if 0 is given.
+    start, end: if given, only the given time range is synthesized. 
+                -1 can be given to indicate the start/end of the data
 
     --> samples: numpy 1D array of doubles holding the samples
     """
+    cdef int minfadesamps = 16
+    cdef float minfade = float(minfadesamps) / samplerate
     if fadetime < 0:
         fadetime = 64.0 / samplerate
+    else:
+        # always have a fadetime of at least minfadesamps samples
+        if fadetime < minfade:
+            fadetime = minfade
+            logger.debug("fadetime is too small. Using fadetime=%f (%d samples)" % (minfade, minfadesamps))
+        fadetime = max(fadetime, 10.0 / samplerate)
     cdef list matrices = dataseq if isinstance(dataseq, list) else list(dataseq)
     cdef _np.ndarray [SAMPLE_t, ndim=2] m
-    cdef double t0 = INFINITY
-    cdef double t1 = 0
-    cdef double mt0, mt1
-    for m in matrices:
-        mt0 = m[0, 0]
-        if mt0 < t0:
-            t0 = mt0
-        mt1 = m[m.shape[0]-1, 0]
-        if mt1 > t1:
-            t1 = mt1
-    cdef int numsamples = int((t1 + fadetime) * samplerate)+1
+    cdef double t0, t1, mt0, mt1
+    if start < 0 or end <= 0:
+        t1 = 0
+        t0 = INFINITY
+        for m in matrices:
+            mt0 = m[0, 0]
+            if mt0 < t0:
+                t0 = mt0
+            mt1 = m[m.shape[0]-1, 0]
+            if mt1 > t1:
+                t1 = mt1
+        if start < 0:
+            start = t0
+        if end <= 0:
+            end = t1
+
+    cdef unsigned int numsamples = int((end + fadetime) * samplerate) + 2
     cdef vector[double] bufvector;
     bufvector.resize(numsamples)
     cdef int i = 0
     cdef loris.Synthesizer *synthesizer = new loris.Synthesizer(samplerate, bufvector, fadetime)
     cdef loris.Partial *lorispartial
+    cdef double synth_t0 = INFINITY
+    cdef double synth_t1 = 0
+    cdef list errors = []
+    cdef int numsynthesized = 0
+    cdef int numrows
     for m in matrices:
-        if m[0, 0] < 0:
-            logger.warn("synthesize: Partial with negative times found, skipping")
+        mt0 = m[0, 0]
+        if mt0 < 0:
+            errors.append("Partial with negative time found: %f" % mt0)
             continue
-        lorispartial = newPartial_fromarray(m)
-        if lorispartial != NULL:
-            synthesizer.synthesize(lorispartial[0])
-            del lorispartial
-        else:
-            print("synthetize: NULL partial")
-    cdef size_t offset = int(t0*samplerate)
-    cdef double[::1] buf = _np.zeros((numsamples,), dtype=float)
-    # cdef _np.ndarray [SAMPLE_t, ndim=1] buf = _np.zeros((numsamples,), dtype='float64')
-    
-    for i in range(offset, numsamples):
-        buf[i] = bufvector[i]
+        numrows = m.shape[0]
+        mt1 = m[numrows-1, 0]
+        if mt0 >= start and mt1 <= end:
+            if mt0 < synth_t0:
+                synth_t0 = mt0
+            if mt1 > synth_t1:
+                synth_t1 = mt1
+            lorispartial = newPartial_fromarray(m)
+            if lorispartial != NULL:
+                synthesizer.synthesize(lorispartial[0])
+                numsynthesized += 1
+                del lorispartial
+    # cdef size_t synth_idx0 = int(synth_t0*samplerate)
+    # cdef size_t synth_idx1 = int(synth_t1*samplerate) + 1
+    cdef size_t startidx = int(start*samplerate)
+    cdef size_t endidx = int(end*samplerate)
+    cdef double[::1] buf = _np.zeros((endidx-startidx,), dtype=float)
+    cdef int j = 0
+    if numsynthesized > 0:
+        for i in range(startidx, endidx):
+            buf[j] = bufvector[i]
+            j += 1
+    else:
+        logger.info("No partials were synthesized")
+    if len(errors) > 0:
+        logger.error("Errors where found durint synthesis: " + "\n".join(errors))
     del synthesizer
     return _np.asarray(buf)
     
@@ -549,9 +608,7 @@ def estimatef0(matrices, double minfreq, double maxfreq, double interval):
     freqs *= confidences > 0.9
     times = numpy.arange(t0, t1, dt)
     f0 = scipy.interpolate.interp1d(times, freqs)
-
-    or f0 = bpf.core.Sampled(freqs, dt, t0)
-
+    
     print(f0(0.8))
     """
     cdef loris.PartialList *pl = PartialList_fromdata(matrices, 0)

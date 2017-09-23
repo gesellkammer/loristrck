@@ -187,6 +187,17 @@ def partial_sample_at(p, times):
     return resampled
 
 
+def partial_crop(p, t0, t1):
+    times = p.times 
+    if times[0] > t0 and times[-1] < t1:
+        return p
+    idx = times > t0
+    idx *= times < t1
+    times = np.concatenate([t0], times[idx], [t1])
+    p2 = npx.table_interpol_linear(p, times)
+    return p2
+    
+
 def partials_sample(sp, dt=0.002, t0=-1, t1=-1, interleave=True):
     # type: (List[ndarray], float, float, float, bool) -> Any
     """

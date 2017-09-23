@@ -77,6 +77,8 @@ cdef extern from "../src/loris/src/Analyzer.h" namespace "Loris":
         double hopTime()
         double freqDrift()
         double windowWidth()
+        void storeResidueBandwidth( double regionWidth )
+        void storeConvergenceBandwidth( double tolerance )
 
 cdef extern from "../src/loris/src/Synthesizer.h" namespace "Loris":
     cppclass Synthesizer "Loris::Synthesizer":
