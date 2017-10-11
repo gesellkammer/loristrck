@@ -13,6 +13,8 @@ Dependencies:
 * fftw3
 
 '''
+VERSION = '0.8.0'
+
 import os
 import sys
 import glob
@@ -153,7 +155,7 @@ setup(
     author='Eduardo Moguillansky',
     author_email='eduardo.moguillansky@gmail.com',
     platforms=['Linux', 'Mac OS-X', 'Windows'],
-    version='0.7.1',
+    version=VERSION,
     ext_modules=[loris],
     cmdclass={'build_ext': build_ext},
     packages=['loristrck'],
