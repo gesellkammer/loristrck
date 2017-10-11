@@ -21,6 +21,8 @@ ctypedef _np.float64_t SAMPLE_t
 logger = logging.getLogger("loristrck")
     
 _np.import_array()
+
+_analize_doc = 
   
 def analyze(double[::1] samples not None, double sr, double resolution, double windowsize= -1, 
             double hoptime =-1, double freqdrift =-1, double sidelobe=-1,
@@ -32,50 +34,48 @@ def analyze(double[::1] samples not None, double sr, double resolution, double w
     =========================
 
     Analyze the audio samples.
+
     Returns a list of 2D numpy arrays, where each array represent a partial with
     columns: [time, freq, amplitude, phase, bandwidth]
 
     If outfile is given, a sdif file is saved with the results of the analysis
 
-    Arguments
-    =========
-
     * samples: numpy.ndarray
         An array representing a mono sndfile.   
-    * sr: int
+    * sr: int (Hz)
         The sampling rate
     * resolution: Hz 
         Only one partial will be found within this distance. 
-        Usual values range from 30 Hz to 200 Hz.
+        Usual values range from 30 Hz to 200 Hz. As a rule of thumb, when tracking a
+        monophonic source, resolution ~= min(f0) * 0.9
+        So if the source is a male voice dropping down to 70 Hz, a resolution of 60 Hz 
+        would be enough
     * windowsize: Hz.
-        If not given, a default value is calculated. The size
-        of the window in samples can be calculated: 
-        windowsize_in_samples = sr / windowsize_in_hz
-        "Should be approx. equal to, and never more than twice the freq.
-         resolution"
-
-    The rest of the parameters are set with sensible defaults if not given explicitely.
-    (a value of -1 indicates that a default value should be set)
-
+        If not given, a default value is calculated. The size of the window in 
+        samples can be calculated: winsizeInSamples = sr / winsizeInHz
+        "Should be approx. equal to, and never more than twice the resolution"
     * hoptime: sec
         The time to move the window after each analysis. 
-        Default: 1/windowWidth. "hop time in secs is the inverse of the window width
+        Default: 1/windowsize. "hop time in secs is the inverse of the window width
         really. A good choice of hop is the window length divided by the main lobe width 
-        in freq. samples, which turns out to be just the inverse of the width.
+        in freq. samples, which turns out to be just the inverse of the width."
+        A lower hoptime can be used: for instance a 2x overlap would result in a hoptime
+        of hoptime=1/windowsize*0.5
+        NB: when using overlap, croptime should still be 1/windowsize
     * freqdrift: Hz  
         The maximum variation of frecuency between two breakpoints to be
         considered to belong to the same partial. A sensible value is
-        between 1/2 to 3/4 of resolution
+        between 1/2 to 3/4 of resolution: freqdrift=0.62*resolution
     * sidelobe: dB (default: 90 dB)
         A positive dB value, indicates the shape of the Kaiser window
     * ampfloor: dB  
         A breakpoint with an amp < ampfloor can't be part of a partial
     * croptime: sec 
         Max. time correction beyond which a reassigned bp is considered 
-        unreliable, and not eligible. Default: the hop time. Should it be half that?
+        unreliable, and not eligible. Default: the hop time. 
     * residuebw: Hz (default = 2000 Hz)
-        Construct Partial bandwidth env. by associating residual 
-        energy with the selected spectral peaks that are used to construct Partials.
+        Construct Partial bandwidth env. by associating residual energy with 
+        the selected spectral peaks that are used to construct Partials.
         The bandwidth is the width (in Hz) association regions used.
         Defaults to 2 kHz, corresponding to 1 kHz region center spacing.
         NB: if residuebw is set, convergencebw must be left unset
@@ -127,7 +127,6 @@ def analyze(double[::1] samples not None, double sr, double resolution, double w
         del sdiffile 
     out = PartialList_toarray(&partials)
     return out
-
 
 cdef list PartialList_toarray(loris.PartialList* partials):
     cdef loris.PartialListIterator p_it = partials.begin()
@@ -634,3 +633,16 @@ cdef _np.ndarray LinearEnvelope_toarray(loris.LinearEnvelope* env, double x0, do
         out[i] = y
         i += 1
     return _np.asarray(out)
+
+
+def meancol(double[:,:] X, int col):
+    """
+    Calculate the mean over the given column.
+    Similar to X[:,col].mean()
+    """
+    cdef double accum = 0
+    cdef int i
+    cdef int L = X.shape[0]
+    for i in range(L):
+        accum += X[i, col]
+    return accum / L
