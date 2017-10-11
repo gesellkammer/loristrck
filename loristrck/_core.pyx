@@ -22,7 +22,6 @@ logger = logging.getLogger("loristrck")
     
 _np.import_array()
 
-_analize_doc = 
   
 def analyze(double[::1] samples not None, double sr, double resolution, double windowsize= -1, 
             double hoptime =-1, double freqdrift =-1, double sidelobe=-1,
