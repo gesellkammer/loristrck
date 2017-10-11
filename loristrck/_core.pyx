@@ -22,7 +22,7 @@ logger = logging.getLogger("loristrck")
     
 _np.import_array()
 
-  
+
 def analyze(double[::1] samples not None, double sr, double resolution, double windowsize= -1, 
             double hoptime =-1, double freqdrift =-1, double sidelobe=-1,
             double ampfloor=-90, double croptime=-1, 
@@ -83,7 +83,7 @@ def analyze(double[::1] samples not None, double sr, double resolution, double w
         mixed derivative of short-time phase, scaled and shifted.  
         The value is the amount of range over which the mixed derivative 
         indicator should be allowed to drift away from a pure sinusoid 
-        before saturating. This range is mapped to bandwidth values on 
+        before saturating. This range is mapped to bandwidth values on
         the range [0,1].  
         NB: one can set residuebw or convergencebw, but not both
     """

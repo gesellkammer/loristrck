@@ -13,12 +13,12 @@ Dependencies:
 * fftw3
 
 '''
-VERSION = '0.8.0'
-
 import os
 import sys
 import glob
 from setuptools import setup, Extension
+
+VERSION = '0.8.2'
 
 try:
     import numpy
@@ -111,6 +111,7 @@ sources = []
 # -----------------------------------------------------------------------------
 loris_base = os.path.join(*'src loris src'.split())
 loris_sources = glob.glob(os.path.join(loris_base, '*.C'))
+loris_headers = glob.glob(os.path.join(loris_base, '*.h'))
 loris_exclude = []
 loris_exclude += [os.path.join(loris_base, filename) for filename in (
     "ImportLemur.C",
@@ -136,6 +137,7 @@ sources.extend(loris_sources)
 loris = Extension(
     'loristrck._core',
     sources=sources + ['loristrck/_core.pyx'],
+    depends=loris_headers,
     include_dirs=include_dirs,
     libraries=libs,
     library_dirs=library_dirs,
@@ -159,10 +161,13 @@ setup(
     ext_modules=[loris],
     cmdclass={'build_ext': build_ext},
     packages=['loristrck'],
+    setup_requires=[
+        'numpy>=1.8',
+        'cython>=0.25'
+    ],
     install_requires=[
         'numpy>=1.8',
-        # 'scipy>=0.11',
-        'cython>=0.20',
+        'cython>=0.25',
         'numpyx',
         'pysndfile'
     ]

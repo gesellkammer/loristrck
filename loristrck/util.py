@@ -533,10 +533,19 @@ def partials_save_matrix(partials, dt, sndfile, gapfactor=3, maxstreams=0):
     return packed, m
 
 
-def sndreadmono(path:str, chan:int=0) -> Tuple[np.ndarray, int]:
+def sndreadmono(path:str, chan:int=0, contiguous=True) -> Tuple[np.ndarray, int]:
     """
     Read a sound file as mono. If the soundfile is multichannel,
-    the indicated channel `chan` is returned
+    the indicated channel `chan` is returned. 
+
+    path: str
+        The path to the soundfile
+    chan: int
+        The channel to return if the file is multichannel
+    contiuous: bool
+        If True, it is ensured that the returned array is contiguous
+        This should be set to True if the samples are to be
+        passed to `analyze`, which expects a continuous array
 
     Returns: a tuple (samples:np.ndarray, sr:int)
     """
@@ -548,6 +557,8 @@ def sndreadmono(path:str, chan:int=0) -> Tuple[np.ndarray, int]:
         mono = data
     else:
         mono = data[:,chan]
+    if contiguous:
+        mono = np.ascontiguousarray(mono)
     return (mono, sr)
 
 
