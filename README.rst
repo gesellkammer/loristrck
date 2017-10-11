@@ -58,12 +58,14 @@ Windows
   
   ``python setup.py install -LC:\\my\\path\\to\\fftw``
 
-2) Download and install::
 
-   git clone https://github.com/gesellkammer/loristrck
-   cd loristrck
-   pip install -r requirements.txt
-   pip install .
+At the command-line, do::
+
+  git clone https://github.com/gesellkammer/loristrck 
+  cd loristrck 
+  pip install -r requirements.txt
+  pip install .
+
 
 Otherwise, install it via pip::
 
@@ -91,6 +93,12 @@ Each partial will be a numpy array of shape = (numbreakpoints, 5)
 with the columns::
 
   time . frequency . amplitude . phase . bandwidth
+
+
+See also
+========
+
+sndtrck: https://github.com/gesellkammer/sndtrck
 
 
 Author

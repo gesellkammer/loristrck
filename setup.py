@@ -18,7 +18,7 @@ import sys
 import glob
 from setuptools import setup, Extension
 
-VERSION = '0.8.2'
+VERSION = '0.8.3'
 
 try:
     import numpy
