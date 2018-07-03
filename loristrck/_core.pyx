@@ -11,7 +11,7 @@ from cython.operator cimport dereference as deref, preincrement as inc
 import numpy as _np
 cimport numpy as _np
 from numpy.math cimport INFINITY
-from libc.math cimport ceil
+from libc.math cimport ceil, sqrt, pi, pow
 import logging
 import sys
 import os
@@ -30,14 +30,15 @@ def analyze(double[::1] samples not None, double sr, double resolution, double w
             outfile=None):
     """
     Partial Tracking Analysis
-    =========================
-
-    Analyze the audio samples.
-
-    Returns a list of 2D numpy arrays, where each array represent a partial with
-    columns: [time, freq, amplitude, phase, bandwidth]
-
+    
+    Analyze the audio samples. Returns a list of 2D numpy arrays, where each array 
+    represent a partial with columns: [time, freq, amplitude, phase, bandwidth]
     If outfile is given, a sdif file is saved with the results of the analysis
+
+    There are three categories of analysis parameters:
+        - the resolution and params related to it (freq. floor and drift)
+        - the window width and params related to it (hop and crop times)
+        - independent parameters (bw region width and amp floor)
 
     * samples: numpy.ndarray
         An array representing a mono sndfile.   
@@ -47,12 +48,12 @@ def analyze(double[::1] samples not None, double sr, double resolution, double w
         Only one partial will be found within this distance. 
         Usual values range from 30 Hz to 200 Hz. As a rule of thumb, when tracking a
         monophonic source, resolution ~= min(f0) * 0.9
-        So if the source is a male voice dropping down to 70 Hz, a resolution of 60 Hz 
-        would be enough
+        So if the source is a male voice dropping down to 70 Hz, resolution=60 Hz 
     * windowsize: Hz.
-        If not given, a default value is calculated. The size of the window in 
-        samples can be calculated: winsizeInSamples = sr / winsizeInHz
-        "Should be approx. equal to, and never more than twice the resolution"
+        Is the main lobe width of the Kaiser analysis window in Hz (main-lobe, zero to zero)
+        If not given, a default value is calculated. 
+        The size of the window in samples can be calculated by:
+        util.kaiserLength(windowsize, sr, sidelobe)
     * hoptime: sec
         The time to move the window after each analysis. 
         Default: 1/windowsize. "hop time in secs is the inverse of the window width
@@ -91,7 +92,7 @@ def analyze(double[::1] samples not None, double sr, double resolution, double w
         windowsize = resolution * 2  # original Loris behaviour
     cdef loris.Analyzer* an = new loris.Analyzer(resolution, windowsize)
     if hoptime > 0:
-        logger.info("Setting hoptime for Analyzer: {0}".format(hoptime))
+        logger.debug("Setting hoptime for Analyzer: {0}".format(hoptime))
         an.setHopTime(hoptime)
     if freqdrift > 0:
         an.setFreqDrift(freqdrift)
@@ -107,8 +108,8 @@ def analyze(double[::1] samples not None, double sr, double resolution, double w
     elif convergencebw >= 0:
         an.storeConvergenceBandwidth(convergencebw)
 
-    logger.info("analysis: windowsize={0}, hoptime={1}, freqDrift={2}".format(
-        an.windowWidth(), an.hopTime(), an.freqDrift()))
+    cdef int winSamples = kaiserWindowLength(an.windowWidth(), sr, an.sidelobeLevel())
+    logger.info(f"analysis: windowsize={an.windowWidth()}Hz ({winSamples} samples), hop={int(an.hopTime()*1000)}ms, freqdrift={an.freqDrift()}Hz")
 
     cdef double *samples0 = &(samples[0])              #<double*> _np.PyArray_DATA(samples)
     cdef double *samples1 = &(samples[<int>(samples.size-1)]) #samples0 + <int>(samples.size - 1)
@@ -126,6 +127,26 @@ def analyze(double[::1] samples not None, double sr, double resolution, double w
         del sdiffile 
     out = PartialList_toarray(&partials)
     return out
+
+
+cdef double kaiserWindowShape(double atten):
+    if atten > 60.0:
+        alpha = 0.12438 * (atten + 6.3)
+    elif atten > 13.26:
+        alpha = 0.76609 * pow((atten - 13.26), 0.4) + 0.09834 * (atten - 13.26)
+    else:   
+        alpha = 0.0
+    return alpha
+
+
+cpdef int kaiserWindowLength(double width, double sr, double sidelobe) except -1:
+    # copyied from KaiserWindow for brevity
+    if sidelobe < 0:
+        raise ValueError("sidelobe should be a possitive dB value")
+    cdef double normWidth = width / sr
+    cdef double alpha = kaiserWindowShape(sidelobe)
+    return int(1.0 + (2. * sqrt((pi*pi) + (alpha*alpha)) / (pi*normWidth)))
+
 
 cdef list PartialList_toarray(loris.PartialList* partials):
     cdef loris.PartialListIterator p_it = partials.begin()

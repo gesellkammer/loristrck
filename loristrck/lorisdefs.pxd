@@ -77,6 +77,7 @@ cdef extern from "../src/loris/src/Analyzer.h" namespace "Loris":
         double hopTime()
         double freqDrift()
         double windowWidth()
+        double sidelobeLevel()
         void storeResidueBandwidth( double regionWidth )
         void storeConvergenceBandwidth( double tolerance )
 
@@ -143,6 +144,7 @@ cdef extern from "../src/loris/src/Oscillator.h":
         double phase()
         double radianFreq()
         void oscillate(double * begin, double * end, const Breakpoint &bp, double srate)
+
 
 #cdef extern from "../src/loris/src/Collator.h":
 #    cppclass Collator:
