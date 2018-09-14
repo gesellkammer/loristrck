@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+import argparse
+import os
+import loristrck
+
+
+description = """
+Analyzes a soundfile or loads a previously analyzed sdiffile, packing the
+partials into a number of simultaneous streams, in order to be resynthesized.
+
+The result is a matrix of at most `maxoscil`*3 number of columns, the height of the
+matrix being dependent on the length of the sound and the sampling interval used.
+
+The matrix is saved as an uncompressed .wav file with the format:
+Header: [dataOffset=5, dt, numcols, numrows, t0] and then the data,
+a matrix of numcols x numrows, where:
+    numcols = numstreams * 3 
+              (each stream consists of three columns: freq., amplitude and bandwidth) 
+    numrows = each row consists of a sample at time t, where t = t0 + row*dt
+
+This is mostly thought to be used in tandem with csound's beadsynt opcode,
+which performs band-enhanced-additive-synthesis in realtime
+
+NB: if you need more control over the analysis step, first analyze the soundfile
+    to obtain a sdif file, then use this utility to pack a matrix
+    (see loristrck_analyze)
+"""
+
+parser = argparse.ArgumentParser(description=description)
+parser.add_argument("-r", "--resolution", default=40, type=float, help="Analysis resolution, in Hz (only if performing analysis)")
+parser.add_argument("-w", "--winsize", default=None, help="Window size (in Hz) (only valid if doing analysis)")
+parser.add_argument("-o", "--outfile", default=None, help="Name of the resulting wav file")
+parser.add_argument("--minbps", default=2, type=int, help="Min. number of breakpoints for a partial to be packed")
+parser.add_argument("--minamp", default=-90, type=float)
+parser.add_argument("--mindur", default=0, type=float)
+parser.add_argument("--maxoscil", default=100, help="default=infinite")
+parser.add_argument("--maxtracks", default=0, type=int, 
+                    help="Max. number of tracks (leave it unlimited if size of file/table is not a problem)")
+parser.add_argument("--dt", default=0, type=float, 
+                    help="A sampling interval, in seconds. "
+                         "As a rule of thumb, dt should be somewhat smaller than ksmps/sr")
+parser.add_argument("infile", help="An infile can be a soundfile or a sdif file")
+
+args = parser.parse_args()
+
+
+infile = args.infile
+ext = os.path.splitext(infile)[1].lower()
+if ext == '.sdif':
+    partials, labels = loristrck.read_sdif(infile)
+else:
+    samples, sr = loristrck.sndreadmono(infile)
+    winsize = float(args.winsize) if args.winsize else -1 
+    partials = loristrck.analyze(samples, sr=sr, resolution=args.resolution, windowsize=winsize)
+
+if args.outfile is None:
+    outfile = f"{os.path.splitext(infile)[0]}.mtx.wav"
+else:
+    outfile = args.outfile
+
+if args.dt > 0:
+    dt = args.dt
+else:
+    dt = round(64/44100 * 0.9, 4)
+
+selected_partials, rest = loristrck.select(partials, mindur=args.mindur, minamp=args.minamp, minbps=args.minbps)
+
+loristrck.partials_save_matrix(selected_partials, dt=dt, outfile=outfile, maxactive=args.maxoscil, maxtracks=args.maxtracks)
+
+print(outfile)

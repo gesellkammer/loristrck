@@ -1,7 +1,5 @@
 import numpy as np
-from typing import List
 import sys
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 import matplotlib.cm
@@ -24,6 +22,7 @@ def amp2db_np(amp, out=None):
 
 
 def _plotpartial(ax, partial, downsample=1, cmap='inferno', exp=1, linewidth=2, avg=True):
+    # columns: time, freq, amp, phase, bw
     X = partial[:,0]
     Y = partial[:,1]
     Z = partial[:,2]
@@ -46,8 +45,8 @@ def _plotpartial(ax, partial, downsample=1, cmap='inferno', exp=1, linewidth=2, 
     ax.add_collection(lc)
     
 
-def plotpartials(sp: List[np.ndarray], downsample=1, cmap='inferno', exp=1, 
-                 linewidth=2, ax=None):
+def plotpartials(sp, downsample=2, cmap='inferno', exp=1.5, 
+                 linewidth=1, ax=None):
     """
     Plot the partials in sp using matplotlib
 

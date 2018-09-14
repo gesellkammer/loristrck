@@ -248,7 +248,7 @@ def read_sdif(path):
     sdiffile: (str) The path to a SDIF file
 
     Returns
-    =======
+    ~~~~~~~
 
     (list of partialdata, labels)
 
