@@ -161,7 +161,7 @@ setup(
     ext_modules=[loris],
     cmdclass={'build_ext': build_ext},
     packages=['loristrck'],
-    scripts=['bin/loristrck_analyze', 'bin/loristrck_pack'],
+    scripts=['bin/loristrck_analyze', 'bin/loristrck_pack', 'bin/loristrck_play'],
     setup_requires=[
         'numpy>=1.8',
         'cython>=0.25'

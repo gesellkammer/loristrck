@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+import argparse
+import os
+import loristrck
+import tempfile
+import sys
+import subprocess
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--speed", default=1, type=float)
+parser.add_argument("inputfile")
+args = parser.parse_args()
+
+
+def play_sdif(inputfile, sr=44100):
+    partials, labels = loristrck.read_sdif(inputfile)
+    samples = loristrck.synthesize(partials, sr)
+    play_samples(samples, sr=sr)
+
+def play_samples_sounddevice(samples, sr):
+    try:
+        import sounddevice
+    except ImportError:
+        return False
+    sounddevice.play(samples, samplerate=sr, blocking=True)
+    return True
+
+
+def play_samples(samples, sr):
+    if play_samples_sounddevice(samples, sr=sr):
+        return
+    outfile = tempfile.mktemp(suffix=".wav", prefix="loristrck-")
+    loristrck.wavwrite(outfile, samples, sr)
+    play_sndfile(outfile)
+
+
+def play_sndfile(sndfile):
+    loristrck.util.open_with_standard_app(sndfile) 
+
+
+def csound_in_path():
+    import shutil
+    return shutil.which("csound") is not None
+
+
+def play_mtx(wavfile, speed=1, gain=1, freqscale=1):
+    import string
+    if not csound_in_path():
+        print("csound should be installed in order to play a .mtx.wav file")
+        sys.exit(-1)
+    template = string.Template("""
+<CsoundSynthesizer>
+<CsOptions>
+-odac
+</CsOptions>
+<CsInstruments>
+
+sr = 44100
+ksmps = 128
+nchnls = 2
+0dbfs = 1.0
+
+gispectrum ftgen 0, 0, 0, -1, "$mtxfile", 0, 0, 0
+
+instr 1
+  ifn = gispectrum
+  iskip      tab_i 0, ifn
+  idt        tab_i 1, ifn
+  inumcols   tab_i 2, ifn
+  inumrows   tab_i 3, ifn
+  itimestart tab_i 4, ifn
+  inumpartials = inumcols / 3 
+  imaxrow = inumrows - 2
+  it = ksmps / sr
+  ispeed init $speed
+  ifreqscale init $freqscale
+  idur = imaxrow * idt / ispeed
+  
+  kplayhead = phasor:k(ispeed/idur)*idur
+  krow = kplayhead / idt
+  kF[] getrowlin krow, ifn, inumcols, iskip, 0, 0, 3
+  kA[] getrowlin krow, ifn, inumcols, iskip, 1, 0, 3
+  kB[] getrowlin krow, ifn, inumcols, iskip, 2, 0, 3
+  
+  iflags = 0    ; uniform noise, no interpolation
+  aout beadsynt kF, kA, kB, -1, iflags, ifreqscale
+  
+  kt timeinsts
+  if(kt > idur) then
+    event "e", 0, 0, 0
+  endif
+  aenv cosseg 0, 0.02, $gain, idur-0.02-0.1, $gain, 0.1, 0
+  aout *= aenv
+  outs aout, aout
+endin
+
+schedule 1, 0, -1
+
+</CsInstruments>
+<CsScore>
+</CsScore>
+</CsoundSynthesizer>
+    """)
+    csdstr = template.safe_substitute(mtxfile=wavfile, speed=str(speed), freqscale=str(freqscale), gain=str(gain))
+    csd = tempfile.mktemp(suffix=".csd", prefix="loristrck-")
+    with open(csd, "w") as f:
+        f.write(csdstr)
+    cmd = ['csound', '-odac', '-d', '-m0', csd]
+    subprocess.call(cmd)
+
+
+def go(inputfile):
+    ext = os.path.splitext(inputfile)[1].lower()
+    if ext == '.sdif':
+        play_sdif(inputfile)
+    elif ext == '.wav':
+        play_mtx(inputfile, speed=args.speed)
+    else:
+        raise ValueError("Input should be a sdif file or a packed matrix (mtx.wav)")
+
+
+go(args.inputfile)

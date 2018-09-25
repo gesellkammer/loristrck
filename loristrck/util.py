@@ -4,6 +4,7 @@ import numpyx as npx
 import logging
 from math import pi, pow, sqrt
 import typing as t
+import sys
 
 from . import _core
 
@@ -225,6 +226,26 @@ def partial_sample_at(p, times):
     timescol = times.reshape((times.shape[0], 1))
     resampled = np.hstack((timescol, data))
     return resampled
+
+
+def open_with_standard_app(path):
+    """
+    Open path with the app defined to handle it by the user
+    at the os level (xdg-open in linux, start in win, open in osx)
+
+    In Linux and macOS this opens the default application in the background
+    and returns immediately
+    """
+    import subprocess
+    platform = sys.platform
+    if platform == 'linux':
+        subprocess.call(["xdg-open", path])
+    elif platform == "win32":
+        os.startfile(path)
+    elif platform == "darwin":
+        subprocess.call(["open", path])
+    else:
+        raise RuntimeError(f"platform {platform} not supported")
 
 
 def partial_crop(p, t0, t1):
@@ -493,14 +514,7 @@ def matrix_save(m,             # type: np.ndarray
 
     See also: partials_save_matrix
     """
-    import pysndfile
-    ext = os.path.splitext(sndfile)[1][1:][:3].lower()
-    assert ext in ('wav', 'aif')
-    assert bits in (32, 64)
-    encoding = "float%d" % bits
-    fmt = pysndfile.construct_format(ext, encoding)
-    f = pysndfile.PySndfile(sndfile, mode="w", format=fmt, channels=1, 
-                            samplerate=44100)
+    f = _wavwriter(sndfile, sr=44100, bits=bits)
     numrows, numcols = m.shape
     if metadata:
         metastr = b"DataStart=%d, SamplingPeriod=%f, NumCols=%d, NumRows=%d, TimeStart=%f" % \
@@ -513,6 +527,23 @@ def matrix_save(m,             # type: np.ndarray
     mflat = m.ravel()
     f.write_frames(mflat)
     f.writeSync()
+
+
+def _wavwriter(outfile, sr=44100, bits=32):
+    ext = os.path.splitext(outfile)[1][1:][:3].lower()
+    assert bits in (32, 64)
+    assert ext in ('wav', 'aif')
+    encoding = "float%d" % bits
+    import pysndfile
+    fmt = pysndfile.construct_format(ext, encoding)
+    f = pysndfile.PySndfile(outfile, mode="w", format=fmt, channels=1, samplerate=sr)
+    return f
+
+
+def wavwrite(outfile, samples, sr=44100, bits=32):
+    f = _wavwriter(outfile, sr=sr, bits=bits)
+    f.write_frames(samples)
+    f.writeSync()    
 
 
 def partials_save_matrix(partials, outfile=None, dt=None, gapfactor=3, maxtracks=0, maxactive=0):
@@ -555,7 +586,7 @@ def partials_save_matrix(partials, outfile=None, dt=None, gapfactor=3, maxtracks
     if dt is None:
         dt = estimate_sampling_interval(partials)
     assert all(isinstance(p, np.ndarray) for p in partials)
-    tracks, rest = pack(partials, gap=dt*gapfactor, maxtracks=maxtracks)<
+    tracks, rest = pack(partials, gap=dt*gapfactor, maxtracks=maxtracks)
     mtx = partials_sample(tracks, dt=dt, maxactive=maxactive)
     t0 = min(p[0, 0] for p in partials)
     matrix_save(mtx, outfile, dt=dt, t0=t0, bits=32)

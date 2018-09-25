@@ -11,3 +11,4 @@ dist/
 loristrck/*.cpp
 .deps
 .idea
+.mypy*
