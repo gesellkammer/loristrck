@@ -35,6 +35,7 @@ def play_samples_sounddevice(samples, sr):
 def play_samples(samples, sr):
     if play_samples_sounddevice(samples, sr=sr):
         return
+    print("Install sounddevice to be able to play samples directly")
     outfile = tempfile.mktemp(suffix=".wav", prefix="loristrck-")
     loristrck.wavwrite(outfile, samples, sr)
     play_sndfile(outfile)
