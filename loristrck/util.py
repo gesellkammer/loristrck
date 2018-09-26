@@ -734,3 +734,40 @@ def estimate_sampling_interval(partials, maxpartials=0, percentile=25, ksmps=64,
     kr = ksmps / sr
     dt = max(gap, kr)
     return round(dt, 4)
+
+
+def partial_timerange(partial):
+    return partial[0, 0], partial[-1, 0]
+
+
+def partials_stretch(partials, factor, inplace=False):
+    if inplace:
+        for p in partials:
+            p[:, 0] *= factor
+        return partials
+    else:
+        out = []
+        for p in partials:
+            p = p.copy()
+            p[:, 0] *= factor
+            out.append(p)
+        return out
+
+
+def i2r(interval):
+    return 2 ** (interval / 12.)
+
+
+def partials_transpose(partials, interval, inplace=False):
+    factor = i2r(interval)
+    if inplace:
+        for p in partials:
+            p[:, 1] *= factor
+        return partials
+    else:
+        out = []
+        for p in partials:
+            p = p.copy()
+            p[:, 1] *= interval
+            out.append(p)
+        return out

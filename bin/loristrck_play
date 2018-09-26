@@ -8,14 +8,20 @@ import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--speed", default=1, type=float)
+parser.add_argument("--transposition", default=0, type=float)
 parser.add_argument("inputfile")
 args = parser.parse_args()
 
 
-def play_sdif(inputfile, sr=44100):
+def play_sdif(inputfile, sr=44100, speed=1, transposition=0):
     partials, labels = loristrck.read_sdif(inputfile)
+    if speed != 1:
+        partials = loristrck.util.partials_stretch(partials, factor=1/speed, inplace=True)
+    if transposition != 0:
+        partials = loristrck.util.partials_transpose(partials, transposition, inplace=True)
     samples = loristrck.synthesize(partials, sr)
     play_samples(samples, sr=sr)
+
 
 def play_samples_sounddevice(samples, sr):
     try:
@@ -112,9 +118,9 @@ schedule 1, 0, -1
 def go(inputfile):
     ext = os.path.splitext(inputfile)[1].lower()
     if ext == '.sdif':
-        play_sdif(inputfile)
+        play_sdif(inputfile, speed=args.speed, transposition=args.transposition)
     elif ext == '.wav':
-        play_mtx(inputfile, speed=args.speed)
+        play_mtx(inputfile, speed=args.speed, freqscale=loristrck.i2r(args.transposition))
     else:
         raise ValueError("Input should be a sdif file or a packed matrix (mtx.wav)")
 
