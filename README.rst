@@ -1,9 +1,10 @@
 LORISTRCK
 =========
 
-`loristrck` is a simple python wrapper for the C++ partial-tracking library Loris. 
+`loristrck` is a wrapper for the C++ partial-tracking library Loris.
+
 It is written in cython and targets python 3. The source of the library is included 
-as part of the project installed alongside to avoid version mismatches
+as part of the project and does not need to be installed previously.
 
 
 C++ Library Dependencies:
@@ -21,12 +22,10 @@ Additional Python Module Dependencies:
 Installation
 ============
 
-OSX
----
+OSX using homebrew
+------------------
 
 ``loristrck`` is a C/C++ extension for python and needs a compiler present
-
-If you haven't, install homebrew (https://brew.sh/)
 
 ::
 
@@ -37,8 +36,6 @@ If you haven't, install homebrew (https://brew.sh/)
 
 Linux
 -----
-
-For distros using apt, this would be:
 
 ::
 
@@ -80,10 +77,10 @@ Usage
 
 .. code-block:: python
 
-   import loristrck
+   import loristrck as lt
 
-   samples, sr = loristrck.sndreadmono("/path/to/sndfile.wav")
-   partials = loristrck.analyze(samples, sr, resolution=60)
+   samples, sr = lt.sndreadmono("/path/to/sndfile.wav")
+   partials = lt.analyze(samples, sr, resolution=60)
    # partials is a python list of numpy arrays
    for partial in partials:
        print(partial)
@@ -92,7 +89,10 @@ Usage
 Each partial will be a numpy array of shape = (numbreakpoints, 5)
 with the columns::
 
-  time . frequency . amplitude . phase . bandwidth
+  time, frequency, amplitude, phase, bandwidth
+
+
+See the example scripts in `bin` for more complete examples
 
 
 See also
