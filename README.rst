@@ -25,7 +25,8 @@ Installation
 OSX using homebrew
 ------------------
 
-``loristrck`` is a C/C++ extension for python and needs a compiler present
+``loristrck`` is a C/C++ extension for python 3 (>=3.6) and needs a compiler present. 
+It is developed in linux but should work in macOS and Windows without problems
 
 ::
 
@@ -62,7 +63,6 @@ At the command-line, do::
   cd loristrck 
   pip install -r requirements.txt
   pip install .
-
 
 Otherwise, install it via pip::
 
@@ -105,6 +105,7 @@ Author
 ------
 
 eduardo dot moguillansky @ gmail dot com
+
 
 License
 -------
