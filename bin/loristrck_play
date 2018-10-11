@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+"""
+This scripts has following dependencies:
+  * csound (>= 6.12) in order to play .mtx.wav files (see loristrck_pack)
+  * the python module `sounddevice` to play a sound directly
+
+"""
 import argparse
 import os
 import loristrck
@@ -8,8 +14,8 @@ import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--speed", default=1, type=float)
-parser.add_argument("--transposition", default=0, type=float)
-parser.add_argument("inputfile")
+parser.add_argument("--transposition", default=0, type=float, help="transposition in semitones")
+parser.add_argument("inputfile", help="A .sdif or .mtx.wav file")
 args = parser.parse_args()
 
 

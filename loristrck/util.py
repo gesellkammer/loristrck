@@ -1,8 +1,9 @@
 import os
 import numpy as np
 import numpyx as npx
+import pysndfile
 import logging
-from math import pi, pow, sqrt
+import math
 import typing as t
 import sys
 
@@ -114,7 +115,6 @@ def _get_best_track(tracks, partial, gap, acceptabledist):
 def _join_track(partials, fade):
     assert fade > 0
     p = concat(partials, fade=fade, edgefade=fade)
-    # assert npx.array_is_sorted(p[:,0])
     if p[0, 0] > 0:
         assert p[0, 2] == 0
     assert p[-1, 2] == 0
@@ -224,8 +224,30 @@ def partial_sample_at(p, times):
     times = np.asarray(times, dtype=float)
     data = npx.table_interpol_linear(p, times)
     timescol = times.reshape((times.shape[0], 1))
-    resampled = np.hstack((timescol, data))
-    return resampled
+    return np.hstack((timescol, data))
+    
+
+def partial_at(p, t, extend=False):
+    """
+    Evaluates partial `p` at time `t`
+
+    p: the partial
+    t: the time to evaluate the partial at
+    extend: should the partial be extended to -inf, +inf? If True, querying a partial 
+        outside its boundaries will result in the values at the boundaries.
+        Otherwise, None is returned
+    """
+    # TODO: implement this as a bisected search on times, interpolate
+    if extend:
+        bp = npx.table_interpol_linear(p, np.array([t], dtype=float))
+    else:
+        t0, t1 = p[0, 0], p[-1, 0]
+        if t0 <= t <= t1:
+            bp = npx.table_interpol_linear(p, np.array([t], dtype=float))
+        else:
+            return None   
+    bp.shape = (4,)
+    return bp
 
 
 def open_with_standard_app(path):
@@ -384,6 +406,17 @@ def meanamp(partial):
     # todo: Use the times to perform an integration rather than
     # just returning the mean of the amps
     return _core.meancol(partial, 2)
+
+
+def meanfreq(partial, weighted=False):
+    # type: (np.ndarray, bool) -> float
+    """
+    Returns the mean frequency of a partial, optionally
+    weighting this mean by the amplitude of each breakpoint
+    """
+    if not weighted:
+        return _core.meancol(partial, 1)
+    return _core.meancolw(partial, 1, 2)
     
 
 def partial_energy(partial):
@@ -402,7 +435,7 @@ def _db2amp(x):
 
 
 def select(partials, mindur=0, minamp=-120, maxfreq=24000, minfreq=0, 
-           minbps=1):
+           minbps=1, t0=0, t1=0):
     # type: (t.List[np.ndarray], float, float, int, int, int) -> t.Tuple[t.List[np.ndarray], t.List[np.ndarray]]
     """
     Selects a seq. of partials matching the given conditions
@@ -430,7 +463,11 @@ def select(partials, mindur=0, minamp=-120, maxfreq=24000, minfreq=0,
     unselected = []
     checkfreq = minfreq > 0 or maxfreq < 24000
     checkbps = minbps > 1 or mindur > 0
+    checktime = t0 > 0 or t1 > 0
     for p in partials:
+        if checktime:
+            if p[-1, 0] < t0 or (t1 > 0 and p[0, 0] > t1):
+                continue
         if checkbps and (len(p) < minbps or (p[-1, 0]-p[0, 0]) < mindur):
             unselected.append(p)
             continue
@@ -445,6 +482,30 @@ def select(partials, mindur=0, minamp=-120, maxfreq=24000, minfreq=0,
                 continue
         selected.append(p)
     return selected, unselected
+
+
+def filter(partials, mindur=0, mindb=-120, maxfreq=2400, minfreq=0, minbps=1, t0=0, t1=0):
+    """
+    Similar to select, but returns a generator yielding only selected partials
+    """
+    amp = _db2amp(mindb)
+    checkfreq = minfreq > 0 or maxfreq < 24000
+    checkbps = minbps > 1 or mindur > 0
+    checktime = t0 > 0 or t1 > 0
+    for p in partials:
+        if checktime:
+            if p[-1, 0] < t0 or (t1 > 0 and p[0, 0] > t1):
+                continue
+        if checkbps and (len(p) < minbps or (p[-1, 0]-p[0, 0]) < mindur):
+            continue
+        if checkfreq:
+            f = _core.meancol(p, 1)
+            if not (minfreq <= f <= maxfreq):
+                continue
+        if mindb > -120:
+            if meanamp(p) < amp:
+                continue
+        yield p
 
 
 def loudest(partials, N=0):
@@ -534,13 +595,15 @@ def _wavwriter(outfile, sr=44100, bits=32):
     assert bits in (32, 64)
     assert ext in ('wav', 'aif')
     encoding = "float%d" % bits
-    import pysndfile
     fmt = pysndfile.construct_format(ext, encoding)
     f = pysndfile.PySndfile(outfile, mode="w", format=fmt, channels=1, samplerate=sr)
     return f
 
 
 def wavwrite(outfile, samples, sr=44100, bits=32):
+    """
+    Write samples to a wav-file (see also sndwrite)
+    """
     f = _wavwriter(outfile, sr=sr, bits=bits)
     f.write_frames(samples)
     f.writeSync()    
@@ -609,7 +672,6 @@ def sndreadmono(path:str, chan:int=0, contiguous=True) -> t.Tuple[np.ndarray, in
 
     Returns: a tuple (samples:np.ndarray, sr:int)
     """
-    import pysndfile
     snd = pysndfile.PySndfile(path)
     data = snd.read_frames(snd.frames())
     sr = snd.samplerate()
@@ -622,8 +684,53 @@ def sndreadmono(path:str, chan:int=0, contiguous=True) -> t.Tuple[np.ndarray, in
     return (mono, sr)
 
 
-def plot_partials(partials: t.List[np.ndarray], downsample:int=1, cmap='inferno', exp=1, 
-                  linewidth=2, ax=None):
+def sndwrite(samples: np.ndarray, sr:int, path:str, encoding=None) -> None:
+    """
+    samples: the samples to write
+    sr: the samplerate
+    path: the outfile to write the samples to (the extension will determine the format)
+    encoding: the encoding of the samples. If None, a default is used, according to the
+        extension of the outfile given. Otherwise, a tuple like ('float', 32) or ('pcm', 24)
+        is expected (also a string of the form "float32" is supported). Of course, not
+        all encodings are supported by each format
+    """
+    ext = os.path.splitext(path)[1].lower()
+    if encoding is None:
+        encoding = {
+            '.wav': ('float', 32),
+            '.aif': ('float', 32),
+            '.flac': ('pcm', 24)
+        }.get(ext)
+        if encoding is None:
+            raise ValueError(f"format {ext} not supported")
+    fmt = _sndfile_format(ext, encoding)
+    numchannels = 1 if len(samples.shape) == 1 else samples.shape[-1]
+    snd = pysndfile.PySndfile(path, mode='w', format=fmt, channels=numchannels, samplerate=sr)
+    snd.write_frames(samples)
+    snd.writeSync()
+
+
+def _sndfile_format(extension, encoding):
+    if isinstance(encoding, str):
+        samplekind = encoding[:-2]
+        bits = int(encoding[-2:])
+    elif isinstance(encoding, tuple):
+        samplekind, bits = encoding
+    else:
+        raise TypeError("encoding should be a string ('float32') or a tuple like ('float', 32)"
+                        f" but got {encoding} of type {type(encoding)}")
+    assert samplekind in {'float', 'pcm'}
+    assert bits in {16, 24, 32, 64}
+    if extension[0] == '.':
+        extension = extension[1:]
+    if extension == 'aif':
+        extension = 'aiff'
+    fmt = f"{samplekind}{bits}"
+    return pysndfile.construct_format(extension, fmt)
+
+
+def plot_partials(partials: t.List[np.ndarray], downsample:int=1, cmap='inferno', exp=1.0, 
+                  linewidth=1, ax=None, avg=True):
     """
     Plot the partials using matplotlib
 
@@ -642,8 +749,8 @@ def plot_partials(partials: t.List[np.ndarray], downsample:int=1, cmap='inferno'
     Returns a matplotlib axes
     """
     from . import plot
-    return plot.plotpartials(partials, downsample=downsample, cmap=cmap, exp=exp, 
-                             linewidth=linewidth, ax=ax)
+    return plot.plot_partials(partials, downsample=downsample, cmap=cmap, exp=exp, 
+                              linewidth=linewidth, ax=ax)
 
 
 def _kaiser_shape(atten):
@@ -657,7 +764,7 @@ def _kaiser_shape(atten):
         alpha = 0.12438 * (atten + 6.3)
     elif atten > 13.26:
         alpha = ( 
-            0.76609 * pow((atten - 13.26), 0.4) + 
+            0.76609 * math.pow((atten - 13.26), 0.4) + 
             0.09834 * (atten - 13.26)
         )
     else:   
@@ -694,7 +801,8 @@ def kaiser_length(width, sr, atten):
     # the last 0.5 is cheap rounding. But I think I don't need cheap rounding 
     # because the equation from Kaiser and Schafer has a +1 that appears to be 
     # a cheap ceiling function.
-    return int(1.0 + (2. * sqrt((pi*pi) + (alpha*alpha)) / (pi*norm_width)))
+    pi = math.pi
+    return int(1.0 + (2. * math.sqrt((pi*pi) + (alpha*alpha)) / (pi*norm_width)))
 
 
 def _partial_estimate_breakpoint_gap(partial, percentile=50):
@@ -737,10 +845,16 @@ def estimate_sampling_interval(partials, maxpartials=0, percentile=25, ksmps=64,
 
 
 def partial_timerange(partial):
+    """
+    Return begin and endtime of partial
+    """
     return partial[0, 0], partial[-1, 0]
 
 
 def partials_stretch(partials, factor, inplace=False):
+    """
+    Stretch the partials in time by a given constant factor
+    """
     if inplace:
         for p in partials:
             p[:, 0] *= factor
@@ -755,10 +869,16 @@ def partials_stretch(partials, factor, inplace=False):
 
 
 def i2r(interval):
+    """
+    Interval to ratio
+    """
     return 2 ** (interval / 12.)
 
 
 def partials_transpose(partials, interval, inplace=False):
+    """
+    Transpose the partials by a given interval
+    """
     factor = i2r(interval)
     if inplace:
         for p in partials:
@@ -771,3 +891,164 @@ def partials_transpose(partials, interval, inplace=False):
             p[:, 1] *= interval
             out.append(p)
         return out
+
+
+def partials_timerange(partials):
+    """
+    Return the timerange of the partials: (begin, end)
+    """
+    t0 = partials[0][0, 0]
+    t1 = max(p[-1, 0] for p in partials)
+    return t0, t1
+
+
+def partials_between(partials, t0=0, t1=0):
+    """
+    Return the partials present between t0 and t1
+    """
+    if t1 == 0:
+        t1 = partials_timerange(partials)[-1]
+    out = []
+    for p in partials:
+        pt0, pt1 = partial_timerange(p)
+        if pt1 > t0 and pt0 < t1:
+            out.append(p)
+        elif pt0 > t1:
+            break
+    return out
+
+
+def _f2m(freq, A4=442):
+    if freq < 9:
+        return 0
+    return 12.0 * math.log(freq/A4, 2) + 69.0
+
+
+def _amp2db(amp):
+    return math.log10(amp) * 20
+
+
+_enharmonics = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B', 'C']
+_notes3 = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C']
+
+def _m2n(midinote):
+    # type: (float) -> str
+    i = int(midinote)
+    micro = midinote - i
+    octave = int(midinote/12.0)-1
+    ps = int(midinote % 12)
+    cents = int(micro*100+0.5)
+    if cents == 0:
+        return str(octave) + _notes3[ps]
+    elif cents == 50:
+        if ps in (1, 3, 6, 8, 10):
+            return str(octave) + _notes3[ps+1] + '-'
+        return str(octave) + _notes3[ps] + '+'
+    elif cents > 50:
+        cents = 100 - cents
+        ps += 1
+        if ps > 11:
+            octave += 1
+        if cents > 9:
+            return "%d%s-%d" % (octave, _enharmonics[ps], cents)
+        else:
+            return "%d%s-0%d" % (octave, _enharmonics[ps], cents)
+    else:
+        if cents > 9:
+            return "%d%s+%d" % (octave, _notes3[ps], cents)
+        else:
+            return "%d%s+0%d" % (octave, _notes3[ps], cents)    
+
+
+def partials_at(partials, t, maxcount=0, mindb=-120, minfreq=10, maxfreq=22000, listen=False):
+    """
+    Return the breakpoints at time t which satisfy the given conditions
+
+    partials: the partials analyzed 
+    t: the time in seconds
+    maxcount: the max. partials to detect, ordered by amplitude (0=all)
+    minamp: the min. amplitude a partial has to have at `t` in order to be counted 
+    minfreq, maxfreq: the freq. range to considere
+    """
+    EPS = 0.000000001
+    present = partials_between(partials, t-EPS, t+EPS)
+    allbps = [partial_at(partial, t) for partial in present]
+    minamp = _db2amp(mindb)
+    bps = [bp for bp in allbps if minfreq <= bp[0] < maxfreq and bp[1] > minamp]
+    if maxcount == 0:
+        return bps
+    bps.sort(key=lambda bp: bp[1], reverse=True)
+    if listen:
+        dur = listen if isinstance(listen, (int, float)) else 4
+        bpspartials = breakpoints_extend(bps, dur)
+        partials_render(bpspartials, open=True)
+    return bps[:maxcount]
+
+
+def breakpoints_extend(bps, dur):
+    """
+    Given a list of breakpoints, extend each to a partial with the 
+    given duration
+    
+    bps: a list of breakpoints, as returned by `partials_at`
+    dur: the duration of the resulting partial
+
+    Example:
+
+    samples, sr = sndreadmono("...")
+    partials = analyze(samples, sr, resolution=50)
+    breakpoints = partials_at(partials, 0.5, maxcount=4)
+    print(breakpoints_to_chord(breakpoints))
+    partials_render(breakpoints_extend(breakpoints, 4), outfile="chord.wav", open=True)
+    """
+    partials = []
+    for bp in bps:
+        partial = np.zeros(shape=(2, 5), dtype=float)
+        partial[0, 1:] = bp
+        partial[1, 0] = dur
+        partial[1, 1:] = bp
+        partials.append(partial)
+    return partials
+
+
+def breakpoints_to_chord(bps):
+    """
+    Convert breakpoints (as returned by partials_at) to a list of
+    (notename, freq, amplitude_db)
+    """
+    out = []
+    for bp in bps:
+        freq = bp[0]
+        amp = bp[1]
+        notename = _m2n(_f2m(freq))
+        db = _amp2db(amp)
+        out.append((notename, freq, db))
+    if out:
+        out.sort()
+    return out
+
+
+def partials_render(partials, outfile=None, sr=44100, fadetime=-1, start=-1, end=-1, encoding=None, open=None):
+    """
+    Render partials as a soundfile
+
+    outfile: the outfile to write to. If not given, a temporary file is used
+    sr: samplerate to render with
+    fadetime: fade partials in/out when they don't end in a 0-amp bp
+    start: start time of render (default: start time of spectrum)
+    end: end time to render (default: end time of spectrum)
+    encoding: if given, the encoding to use
+    open: open the rendered file in the default application (default to True if no outfile is given)
+
+    Returns: the path to the oufile written
+    """
+    if outfile is None:
+        import tempfile
+        outfile = tempfile.mktemp(suffix=".wav")
+        if open is None:
+            open = True
+    samples = _core.synthesize(partials, samplerate=sr, fadetime=fadetime, start=start, end=end)
+    sndwrite(samples, sr=sr, path=outfile, encoding=encoding)
+    if open:
+        open_with_standard_app(outfile)
+    return outfile

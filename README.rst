@@ -22,6 +22,21 @@ Additional Python Module Dependencies:
 Installation
 ============
 
+Install from source
+-------------------
+
+Install dependencies (see each platform):
+  * fftw
+  * libsndfile
+
+::
+
+   git clone https://github.com/gesellkammer/loristrck 
+   cd loristrck 
+   pip install -r requirements.txt
+   pip install .
+
+
 OSX using homebrew
 ------------------
 
@@ -35,7 +50,8 @@ It is developed in linux but should work in macOS and Windows without problems
     pip install numpy cython
     pip install loristrck
 
-Linux
+
+   Linux
 -----
 
 ::
@@ -82,9 +98,17 @@ Usage
    samples, sr = lt.sndreadmono("/path/to/sndfile.wav")
    partials = lt.analyze(samples, sr, resolution=60)
    # partials is a python list of numpy arrays
-   for partial in partials:
+   # select a subset of most significant partials
+   selected, noise = lt.select(partials, mindur=0.02, maxfreq=12000, minamp=-60, minbp=2)
+   # print each partial as data
+   for partial in selected:
        print(partial)
-
+   # plot selected partials
+   lt.plot_partials(selected)
+   # now resynthesize both parts separately 
+   lt.partials_render(selected, outfile="selected.wav")
+   lt.partials_render(noise, outfile="noise.wav")
+   
 
 Each partial will be a numpy array of shape = (numbreakpoints, 5)
 with the columns::

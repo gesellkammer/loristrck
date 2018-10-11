@@ -666,3 +666,19 @@ def meancol(double[:,:] X, int col):
     for i in range(L):
         accum += X[i, col]
     return accum / L
+
+
+def meancolw(double[:, :] X, int col, int colw):
+    """
+    Calculate the mean over `col` column, using col `colw` as weight
+    """
+    cdef double accum=0, weightsum=0
+    cdef int i
+    cdef int L = X.shape[0]
+    cdef double x, w
+    for i in range(L):
+        x = X[i, col]
+        w = X[i, colw]
+        accum += x*w
+        weightsum += w
+    return accum / weightsum
