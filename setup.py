@@ -18,45 +18,21 @@ import sys
 import glob
 from setuptools import setup, Extension
 
-VERSION = '0.8.6'
+VERSION = '0.9.0'
 
-try:
-    import numpy
-except ImportError:
-    print(
-        "numpy is necessary to build this package." 
-        "Please install it on your own and try again."
-    )
-    sys.exit()
-
-try:
-    from Cython.Distutils import build_ext
-
-except ImportError:
-    print(
-        "Cython is necessary to build this package." 
-        "Please install it on your own and try again.")
-    sys.exit()
-        
+class get_numpy_include(str):
+    def __str__(self):
+        import numpy
+        return numpy.get_include()
 
 # -----------------------------------------------------------------------------
 # Global
 # -----------------------------------------------------------------------------
 
-# get numpy include directory
-try:
-    numpy_include = numpy.get_include()
-except AttributeError:
-    numpy_include = numpy.get_numpy_include()
-
-macros = []
-link_args = []
-
 include_dirs = [
     'loristrck',
     'src/loristrck',
     'src/loris',
-    numpy_include
 ]
 
 library_dirs = []
@@ -134,32 +110,23 @@ loris_exclude += [os.path.join(loris_base, filename) for filename in (
 loris_sources = list(set(loris_sources) - set(loris_exclude))
 sources.extend(loris_sources)
 
-loris = Extension(
-    'loristrck._core',
-    sources=sources + ['loristrck/_core.pyx'],
-    depends=loris_headers,
-    include_dirs=include_dirs,
-    libraries=libs,
-    library_dirs=library_dirs,
-    extra_compile_args=compile_args,
-    language='c++'
-)
-
 doc_lines = __doc__.split('\n')
 
 setup(
     name='loristrck',
-    description=doc_lines[0],
-    long_description='\n'.join(doc_lines[2:]),
-    url='https://github.com/gesellkammer/loristrck',
-    download_url='https://github.com/gesellkammer/loristrck',
-    license='GPL',
-    author='Eduardo Moguillansky',
-    author_email='eduardo.moguillansky@gmail.com',
-    platforms=['Linux', 'Mac OS-X', 'Windows'],
-    version=VERSION,
-    ext_modules=[loris],
-    cmdclass={'build_ext': build_ext},
+    python_requires='>=3.6',
+    ext_modules = [
+        Extension(
+            'loristrck._core',
+            sources=sources + ['loristrck/_core.pyx'],
+            depends=loris_headers,
+            include_dirs=include_dirs + [get_numpy_include()],
+            libraries=libs,
+            library_dirs=library_dirs,
+            extra_compile_args=compile_args,
+            language='c++'
+        )
+    ],
     packages=['loristrck'],
     scripts=['bin/loristrck_analyze', 'bin/loristrck_pack', 'bin/loristrck_play'],
     setup_requires=[
@@ -171,5 +138,15 @@ setup(
         'cython>=0.25',
         'numpyx',
         'pysndfile'
-    ]
+    ],
+    
+    url='https://github.com/gesellkammer/loristrck',
+    download_url='https://github.com/gesellkammer/loristrck',
+    license='GPL',
+    author='Eduardo Moguillansky',
+    author_email='eduardo.moguillansky@gmail.com',
+    platforms=['Linux', 'Mac OS-X', 'Windows'],
+    version=VERSION,
+    description=doc_lines[0],
+    long_description='\n'.join(doc_lines[2:]),            
 )
