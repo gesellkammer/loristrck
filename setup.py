@@ -85,7 +85,7 @@ sources = []
 # -----------------------------------------------------------------------------
 # Loris
 # -----------------------------------------------------------------------------
-loris_base = os.path.join(*'src loris src'.split())
+loris_base = os.path.join('src', 'loris', 'src')
 loris_sources = glob.glob(os.path.join(loris_base, '*.C'))
 loris_headers = glob.glob(os.path.join(loris_base, '*.h'))
 loris_exclude = []
