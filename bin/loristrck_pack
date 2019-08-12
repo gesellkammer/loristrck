@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import argparse
 import os
 import loristrck
@@ -30,10 +30,12 @@ parser = argparse.ArgumentParser(description=description)
 parser.add_argument("-r", "--resolution", default=40, type=float, help="Analysis resolution, in Hz (only if performing analysis)")
 parser.add_argument("-w", "--winsize", default=None, help="Window size (in Hz) (only valid if doing analysis)")
 parser.add_argument("-o", "--outfile", default=None, help="Name of the resulting wav file")
-parser.add_argument("--minbps", default=2, type=int, help="Min. number of breakpoints for a partial to be packed")
+parser.add_argument("--minbps", default=2, type=int, 
+                    help="Min. number of breakpoints for a partial to be packed")
 parser.add_argument("--minamp", default=-90, type=float)
 parser.add_argument("--mindur", default=0, type=float)
-parser.add_argument("--maxoscil", default=100, help="default=infinite")
+parser.add_argument("--maxoscil", default=100, type=int, 
+                    help="default=infinite")
 parser.add_argument("--maxtracks", default=0, type=int, 
                     help="Max. number of tracks (leave it unlimited if size of file/table is not a problem)")
 parser.add_argument("--dt", default=0, type=float, 

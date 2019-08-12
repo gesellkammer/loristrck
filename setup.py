@@ -18,7 +18,7 @@ import sys
 import glob
 from setuptools import setup, Extension
 
-VERSION = '0.9.2'
+VERSION = '0.9.3'
 
 class get_numpy_include(str):
     def __str__(self):
@@ -137,7 +137,7 @@ setup(
         'numpy>=1.8',
         'cython>=0.25',
         'numpyx',
-        'pysndfile'
+        'soundfile'
     ],
     
     url='https://github.com/gesellkammer/loristrck',

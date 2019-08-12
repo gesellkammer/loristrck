@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import numpyx as npx
-import pysndfile
+import soundfile
 import logging
 import math
 import typing as t
@@ -128,30 +128,32 @@ def pack(partials, maxtracks=0, gap=0.010, fade=-1, acceptabledist=0.100, minbps
     as tracks for resynthesis, minimizing the need
     of oscillators. 
 
-    partials: 
-        a list of arrays, where each array represents a partial, 
-        as returned by analyze
-    
-    maxtracks: 
-        if > 0, sets the maximum number of tracks. Partials not 
-        fitting in will be discarded. Consider living this at 0, to allow
-        for unlimited tracks, and limit the amount of active streams later
-        on
+    Args:
+        partials: 
+            a list of arrays, where each array represents a partial, 
+            as returned by analyze
+        
+        maxtracks: 
+            if > 0, sets the maximum number of tracks. Partials not 
+            fitting in will be discarded. Consider living this at 0, to allow
+            for unlimited tracks, and limit the amount of active streams later
+            on
 
-    gap: 
-        minimum gap between partials in a track. Should be longer than 
-        2 times the sampling interval, if the packed partials are later 
-        going to be resampled.
+        gap: 
+            minimum gap between partials in a track. Should be longer than 
+            2 times the sampling interval, if the packed partials are later 
+            going to be resampled.
 
-    fade: 
-        apply a fade to the partials before joining them. 
-        If not given, a default value is calculated
+        fade: 
+            apply a fade to the partials before joining them. 
+            If not given, a default value is calculated
 
-    acceptabledist: 
-        instead of searching for the best possible fit, pack two partials 
-        together if they are near enough
+        acceptabledist: 
+            instead of searching for the best possible fit, pack two partials 
+            together if they are near enough
 
-    RETURNS: the packed tracks (a list of numpy arrays), a list of unpacked partials
+    Returns: 
+        the packed tracks (a list of numpy arrays), a list of unpacked partials
 
     NB: amplitude is always faded out between partials
 
@@ -171,7 +173,6 @@ def pack(partials, maxtracks=0, gap=0.010, fade=-1, acceptabledist=0.100, minbps
         tracks = tracks if tracks is not None else []
         unpacked = []
         for partial in partials:
-            assert isinstance(partial, np.ndarray), f"type = {type(partial)}"
             if len(partial) < minbps:
                 continue
             best_track = _get_best_track(tracks, partial, clearance, acceptabledist)
@@ -195,13 +196,15 @@ def partial_sample_regularly(p, dt, t0=-1, t1=-1):
     """
     Sample a partial `p` at regular time intervals
 
-    p: a partial represented as a 2D-array with columns
-       times, freqs, amps, phases, bws
-    dt: sampling period
-    t0, t1: start and end times, or -1 to use the start and
-            end times of the partial
-    
-    Returns a partial (2D-array with columns times, freqs, amps, phases, bws)
+    Args:
+        p: a partial represented as a 2D-array with columns
+           times, freqs, amps, phases, bws
+        dt: sampling period
+        t0, t1: start and end times, or -1 to use the start and
+                end times of the partial
+        
+    Returns: 
+        a partial (2D-array with columns times, freqs, amps, phases, bws)
     """
     if t0 < 0:
         t0 = p[0, 0]
@@ -216,10 +219,14 @@ def partial_sample_at(p, times):
     """
     Sample a partial `p` at given times
 
-    p: a partial represented as a 2D-array with columns
-       times, freqs, amps, phases, bws
+    Args:
+        p: a partial represented as a 2D-array with columns
+           times, freqs, amps, phases, bws
+        times:
+            the times to evaluate partial at
 
-    Returns a partial (2D-array with columns times, freqs, amps, phases, bws)
+    Returns:
+        a partial (2D-array with columns times, freqs, amps, phases, bws)
     """
     times = np.asarray(times, dtype=float)
     data = npx.table_interpol_linear(p, times)
@@ -231,13 +238,13 @@ def partial_at(p, t, extend=False):
     """
     Evaluates partial `p` at time `t`
 
-    p: the partial
-    t: the time to evaluate the partial at
-    extend: should the partial be extended to -inf, +inf? If True, querying a partial 
-        outside its boundaries will result in the values at the boundaries.
-        Otherwise, None is returned
+    Args:
+        p: the partial
+        t: the time to evaluate the partial at
+        extend: should the partial be extended to -inf, +inf? If True, querying a partial 
+            outside its boundaries will result in the values at the boundaries.
+            Otherwise, None is returned
     """
-    # TODO: implement this as a bisected search on times, interpolate
     if extend:
         bp = npx.table_interpol_linear(p, np.array([t], dtype=float))
     else:
@@ -442,8 +449,12 @@ def select(partials, mindur=0, minamp=-120, maxfreq=24000, minfreq=0,
 
     Returns: selected, rest
 
-    * partials: a list of numpy 2D arrays, each array representing 
-                a partial
+    Args:
+        partials: a list of numpy 2D arrays, each array representing 
+                  a partial
+
+    Returns:
+        a tuple (selected partials, discarded partials)
 
     Select only those partials which have:
         * a min. duration of at least `mindur` AND
@@ -540,15 +551,16 @@ def matrix_save(m,             # type: np.ndarray
     portability (no endianness problem) and the availability of fast
     libraries for many applications.
 
-    m      : a 2D-matrix as returned by `partials_sample`
-    sndfile: the path to the resulting soundfile (wav or aif)
-    dt     : the sampling period used to sample the partials.
-    t0     : the start time of the sampled partials
-    bits   : 32 or 64. 32 bits should be enough
-    header : if True, a header is included with the format
-             [dataOffset, dt, numcols, numrows, t0]
-    metadata: If True, metadata is included which duplicates the 
-              data of the header in string form.    
+    Args:
+        m      : a 2D-matrix as returned by `partials_sample`
+        sndfile: the path to the resulting soundfile (wav or aif)
+        dt     : the sampling period used to sample the partials.
+        t0     : the start time of the sampled partials
+        bits   : 32 or 64. 32 bits should be enough
+        header : if True, a header is included with the format
+                 [dataOffset, dt, numcols, numrows, t0]
+        metadata: If True, metadata is included which duplicates the 
+                  data of the header in string form.    
 
     Each row corresponds to a sample of all partials, the time of 
     each row can be determined by
@@ -561,53 +573,49 @@ def matrix_save(m,             # type: np.ndarray
     Example
     ~~~~~~~
 
-    partials = read_sdif(path_to_sdif)
-    # Eliminate very short-lived partials
-    partials, _ = select(minbps=2, mindur=0.002)  
-    tracks = pack(partials)
+    import loristrck as lt
+    partials = lt.read_sdif(path_to_sdif)
+    tracks = lt.pack(partials)
     dt = 64/44100
-    m = partials_sample(tracks, dt)
-    numrows, numcols = m.shape
+    m = lt.partials_sample(tracks, dt)
     matrix_save(m, dt, "out.wav")
     
-    Applications which can make use of this data include csound 
-    (via its opcode adsynt2)
-
     See also: partials_save_matrix
     """
     f = _wavwriter(sndfile, sr=44100, bits=bits)
     numrows, numcols = m.shape
     if metadata:
         metastr = b"DataStart=%d, SamplingPeriod=%f, NumCols=%d, NumRows=%d, TimeStart=%f" % \
-                  (5, dt, numcols, numrows, t0)
-        f.set_string("SF_STR_COMMENT", metastr)
-        f.set_string("SF_STR_SOFTWARE", b"loristrck")
+                  (5 if header else 0, dt, numcols, numrows, t0)
+        
+        # f.set_string("SF_STR_COMMENT", metastr)
+        f.coment = metastr
+        # f.set_string("SF_STR_SOFTWARE", b"loristrck")
+        f.software = "loristrck"
     if header:
         header_array = np.array([5, dt, numcols, numrows, t0], dtype=float)
-        f.write_frames(header_array)
+        f.write(header_array)
     mflat = m.ravel()
-    f.write_frames(mflat)
-    f.writeSync()
+    f.write(mflat)
+    f.close()
+    
 
-
-def _wavwriter(outfile, sr=44100, bits=32):
-    ext = os.path.splitext(outfile)[1][1:][:3].lower()
+def _wavwriter(outfile, sr=44100, bits=32, channels=1):
     assert bits in (32, 64)
+    ext = os.path.splitext(outfile)[1][1:][:3].lower()
     assert ext in ('wav', 'aif')
-    encoding = "float%d" % bits
-    fmt = pysndfile.construct_format(ext, encoding)
-    f = pysndfile.PySndfile(outfile, mode="w", format=fmt, channels=1, samplerate=sr)
-    return f
+    subtype = 'FLOAT' if bits == 32 else 'DOUBLE'
+    return soundfile.SoundFile(outfile, mode="w", samplerate=sr, channels=channels, subtype=subtype)
 
 
 def wavwrite(outfile, samples, sr=44100, bits=32):
     """
-    Write samples to a wav-file (see also sndwrite)
+    Write samples to a wav-file (see also sndwrite) as float32 or float64
     """
-    f = _wavwriter(outfile, sr=sr, bits=bits)
-    f.write_frames(samples)
-    f.writeSync()    
-
+    f = _wavwriter(outfile, sr=sr, bits=bits, channels=numchannels(samples))
+    f.write(samples)
+    f.close()
+    
 
 def partials_save_matrix(partials, outfile=None, dt=None, gapfactor=3, maxtracks=0, maxactive=0):
     # type: (t.List[np.ndarray], float, str, float, int) -> t.Tuple[t.List[np.ndarray], np.ndarray]
@@ -616,34 +624,43 @@ def partials_save_matrix(partials, outfile=None, dt=None, gapfactor=3, maxtracks
     at period `dt` and saved the resulting matrix to a soundfile
     (wav or aif)
 
-    partials: 
-        a list of numpy 2D-arrays, each representing a partial
-    dt: 
-        sampling period to sample the packed partials. If not given, 
-        it will be estimated with sensible defaults. To have more control 
-        over this stage, you can call estimate_sampling_interval yourself.
-        At the cost of oversampling, a good value can be ksmps/sr, which results
-        in 64/44100 = 0.0014 secs for typical values
-    outfile: 
-        path to save the sampled partials. The data is saved
-        as an uncompressed .wav soundfile.
-    gapfactor: 
-        partials are packed with a gap = dt * gapfactor. 
-        It should be at least 2. A gap is a minimal amount of silence
-        between the partials to allow for a fade out and fade in
-    maxactive:
-        Partials are packed in simultaneous streams, which correspond to
-        an oscillator bank for resynthesis. If maxactive is given,
-        a max. of `maxactive` is allowed, and the softer partials are
-        zeroed to signal that they can be skipped during resynthesis. 
+    Args:
+        partials: 
+            a list of numpy 2D-arrays, each representing a partial
+        dt: 
+            sampling period to sample the packed partials. If not given, 
+            it will be estimated with sensible defaults. To have more control 
+            over this stage, you can call estimate_sampling_interval yourself.
+            At the cost of oversampling, a good value can be ksmps/sr, which results
+            in 64/44100 = 0.0014 secs for typical values
+        outfile: 
+            path to save the sampled partials. The data is saved
+            as an uncompressed .wav soundfile.
+        gapfactor: 
+            partials are packed with a gap = dt * gapfactor. 
+            It should be at least 2. A gap is a minimal amount of silence
+            between the partials to allow for a fade out and fade in
+        maxtracks:
+            Partials are packed in tracks and represented as a 2D matrix where
+            each track is a row. If filesize and save/load time are a concern,
+            a max. value for the amount of tracks can be given here, with the
+            consequence that partials might be left out if there are no available
+            tracks to pack them into. See also `maxactive`
+        maxactive:
+            Partials are packed in simultaneous tracks, which correspond to
+            an oscillator bank for resynthesis. If maxactive is given,
+            a max. of `maxactive` is allowed, and the softer partials are
+            zeroed to signal that they can be skipped during resynthesis. 
 
-    Returns: (packed spectrum, matrix)
+    Returns: 
+        a tuple (packed spectrum, matrix)
 
     Example
     ~~~~~~~
 
-    partials, labels = read_sdif(sdiffile)
-    selected, rest = select(partials, minbps=2, mindur=0.005, minamp=-80)
+    import loristrck as lt
+    partials, labels = lt.read_sdif(sdiffile)
+    selected, rest = lt.select(partials, minbps=2, mindur=0.005, minamp=-80)
     partials_save_matrix(selected, 0.002, "packed.wav")
     """
     if dt is None:
@@ -656,77 +673,77 @@ def partials_save_matrix(partials, outfile=None, dt=None, gapfactor=3, maxtracks
     return tracks, mtx
 
 
+def numchannels(samples: np.ndarray) -> int:
+    return 1 if samples.ndim == 1 else samples.shape[1]
+    
+
 def sndreadmono(path:str, chan:int=0, contiguous=True) -> t.Tuple[np.ndarray, int]:
     """
     Read a sound file as mono. If the soundfile is multichannel,
     the indicated channel `chan` is returned. 
 
-    path: str
-        The path to the soundfile
-    chan: int
-        The channel to return if the file is multichannel
-    contiuous: bool
-        If True, it is ensured that the returned array is contiguous
-        This should be set to True if the samples are to be
-        passed to `analyze`, which expects a contiguous array
+    Args:
+        path: str
+            The path to the soundfile
+        chan: int
+            The channel to return if the file is multichannel
+        contiguous: bool
+            If True, it is ensured that the returned array is contiguous
+            This should be set to True if the samples are to be
+            passed to `analyze`, which expects a contiguous array
 
-    Returns: a tuple (samples:np.ndarray, sr:int)
+    Returns: 
+        a tuple (samples:np.ndarray, sr:int)
     """
-    snd = pysndfile.PySndfile(path)
-    data = snd.read_frames(snd.frames())
-    sr = snd.samplerate()
-    if len(data.shape) == 1:
-        mono = data
-    else:
-        mono = data[:,chan]
+    samples, sr = soundfile.read(path)
+    if numchannels(samples) > 1:
+        samples = samples[:,chan]
     if contiguous:
-        mono = np.ascontiguousarray(mono)
-    return (mono, sr)
+        samples = np.ascontiguousarray(samples)
+    return samples, sr
 
 
 def sndwrite(samples: np.ndarray, sr:int, path:str, encoding=None) -> None:
     """
-    samples: the samples to write
-    sr: the samplerate
-    path: the outfile to write the samples to (the extension will determine the format)
-    encoding: the encoding of the samples. If None, a default is used, according to the
-        extension of the outfile given. Otherwise, a tuple like ('float', 32) or ('pcm', 24)
-        is expected (also a string of the form "float32" is supported). Of course, not
-        all encodings are supported by each format
+    Args:
+        samples: np.ndarray
+            the samples to write
+        sr: int
+            the samplerate
+        path: str
+            the outfile to write the samples to (the extension will determine the format)
+        encoding: tuple(str, int)
+            the encoding of the samples. If None, a default is used, according to the
+            extension of the outfile given. Otherwise, a tuple like ('float', 32) or ('pcm', 24)
+            is expected. Not all encodings are supported by each format
     """
-    ext = os.path.splitext(path)[1].lower()
-    if encoding is None:
+    if isinstance(encoding, str):
+        encoding = encoding[:-2], int(encoding[-2:])
+    elif encoding is None:
+        ext = os.path.splitext(path)[0].lower()
         encoding = {
             '.wav': ('float', 32),
             '.aif': ('float', 32),
+            '.aiff': ('float', 32),
             '.flac': ('pcm', 24)
         }.get(ext)
         if encoding is None:
             raise ValueError(f"format {ext} not supported")
-    fmt = _sndfile_format(ext, encoding)
-    numchannels = 1 if len(samples.shape) == 1 else samples.shape[-1]
-    snd = pysndfile.PySndfile(path, mode='w', format=fmt, channels=numchannels, samplerate=sr)
-    snd.write_frames(samples)
-    snd.writeSync()
 
+    subtype = {
+        ('float', 32): 'FLOAT',
+        ('float', 64): 'DOUBLE',
+        ('pcm', 16): 'PCM_16',
+        ('pcm', 24): 'PCM_24',
+        ('pcm', 32): 'PCM_32'
+    }.get(encoding)
 
-def _sndfile_format(extension, encoding):
-    if isinstance(encoding, str):
-        samplekind = encoding[:-2]
-        bits = int(encoding[-2:])
-    elif isinstance(encoding, tuple):
-        samplekind, bits = encoding
-    else:
-        raise TypeError("encoding should be a string ('float32') or a tuple like ('float', 32)"
-                        f" but got {encoding} of type {type(encoding)}")
-    assert samplekind in {'float', 'pcm'}
-    assert bits in {16, 24, 32, 64}
-    if extension[0] == '.':
-        extension = extension[1:]
-    if extension == 'aif':
-        extension = 'aiff'
-    fmt = f"{samplekind}{bits}"
-    return pysndfile.construct_format(extension, fmt)
+    if subtype is None:
+        raise ValueError(f"encoding {encoding} not supported")
+
+    f = soundfile.SoundFile(path, mode="w", samplerate=sr, channels=numchannels(samples), subtype=subtype)
+    f.write(samples)
+    f.close()
 
 
 def plot_partials(partials: t.List[np.ndarray], downsample:int=1, cmap='inferno', exp=1.0, 
@@ -734,19 +751,21 @@ def plot_partials(partials: t.List[np.ndarray], downsample:int=1, cmap='inferno'
     """
     Plot the partials using matplotlib
 
-    partials: List
-        a list of numpy arrays, each representing a partial
-    downsample: int
-        If > 1, only one every `downsample` breakpoints will be taken
-        into account. 
-    cmap:
-        a string defining the colormap used, as presented here:
-        https://matplotlib.org/users/colormaps.html
-    ax:
-        A matplotlib axes. If one is passed, plotting will be done to this
-        axes. Otherwise a new axes is created
+    Args:
+        partials: List
+            a list of numpy arrays, each representing a partial
+        downsample: int
+            If > 1, only one every `downsample` breakpoints will be taken
+            into account. 
+        cmap:
+            a string defining the colormap used, as presented here:
+            https://matplotlib.org/users/colormaps.html
+        ax:
+            A matplotlib axes. If one is passed, plotting will be done to this
+            axes. Otherwise a new axes is created
 
-    Returns a matplotlib axes
+    Returns: 
+        a matplotlib axes
     """
     from . import plot
     return plot.plot_partials(partials, downsample=downsample, cmap=cmap, exp=exp, 
@@ -779,10 +798,11 @@ def kaiser_length(width, sr, atten):
     Returns the length in samples of a Kaiser window from the desired
     main lobe width.
     
-    width: the width of the main lobe (Hz)
-    sr: the sample rate, in samples / sec
-    atten: the attenuation in possitive dB
-    
+    Args:
+        width: the width of the main lobe (Hz)
+        sr: the sample rate, in samples / sec
+        atten: the attenuation in possitive dB
+        
     // ---------------------------------------------------------------------------
     //  computeLength
     // ---------------------------------------------------------------------------
@@ -830,10 +850,11 @@ def estimate_sampling_interval(partials, maxpartials=0, percentile=25, ksmps=64,
     the partials. The usage is to find a sampling interval which neither oversamples
     nor undersamples the partials for a synthesis strategy based on blocks of 
     computation (like in csound, supercollider, etc, where each ugen is given
-    an buffer of ksmps samples to fill instead of working sample by sample)
+    a buffer of samples to fill instead of working sample by sample)
 
-    partials: a list of partials
-    maxpartials: if given, only consider this number of partials to calculate dt
+    Args:
+        partials: a list of partials
+        maxpartials: if given, only consider this number of partials to calculate dt
     """
     partial_percentile = percentile
     if maxpartials > 0:
@@ -854,6 +875,13 @@ def partial_timerange(partial):
 def partials_stretch(partials, factor, inplace=False):
     """
     Stretch the partials in time by a given constant factor
+
+    Args:
+        partials: a list of partials
+        factor: float
+            a factor to multiply all times by
+        inplace:
+            modify partials in place
     """
     if inplace:
         for p in partials:
@@ -905,6 +933,13 @@ def partials_timerange(partials):
 def partials_between(partials, t0=0, t1=0):
     """
     Return the partials present between t0 and t1
+
+    Args:
+        partials: a list of partials
+        t0: float
+            start time in secs
+        t1: float
+            end time in secs
     """
     if t1 == 0:
         t1 = partials_timerange(partials)[-1]
@@ -964,11 +999,15 @@ def partials_at(partials, t, maxcount=0, mindb=-120, minfreq=10, maxfreq=22000, 
     """
     Return the breakpoints at time t which satisfy the given conditions
 
-    partials: the partials analyzed 
-    t: the time in seconds
-    maxcount: the max. partials to detect, ordered by amplitude (0=all)
-    minamp: the min. amplitude a partial has to have at `t` in order to be counted 
-    minfreq, maxfreq: the freq. range to considere
+    Args:
+        partials: the partials analyzed 
+        t: the time in seconds
+        maxcount: the max. partials to detect, ordered by amplitude (0=all)
+        minamp: the min. amplitude a partial has to have at `t` in order to be counted 
+        minfreq, maxfreq: the freq. range to considere
+
+    Returns:
+        the breakpoints at time t which satisfy the given conditions        
     """
     EPS = 0.000000001
     present = partials_between(partials, t-EPS, t+EPS)
@@ -990,8 +1029,9 @@ def breakpoints_extend(bps, dur):
     Given a list of breakpoints, extend each to a partial with the 
     given duration
     
-    bps: a list of breakpoints, as returned by `partials_at`
-    dur: the duration of the resulting partial
+    Args:
+        bps: a list of breakpoints, as returned by `partials_at`
+        dur: the duration of the resulting partial
 
     Example:
 
@@ -1032,15 +1072,17 @@ def partials_render(partials, outfile=None, sr=44100, fadetime=-1, start=-1, end
     """
     Render partials as a soundfile
 
-    outfile: the outfile to write to. If not given, a temporary file is used
-    sr: samplerate to render with
-    fadetime: fade partials in/out when they don't end in a 0-amp bp
-    start: start time of render (default: start time of spectrum)
-    end: end time to render (default: end time of spectrum)
-    encoding: if given, the encoding to use
-    open: open the rendered file in the default application (default to True if no outfile is given)
+    Args:
+        outfile: the outfile to write to. If not given, a temporary file is used
+        sr: samplerate to render with
+        fadetime: fade partials in/out when they don't end in a 0-amp bp
+        start: start time of render (default: start time of spectrum)
+        end: end time to render (default: end time of spectrum)
+        encoding: if given, the encoding to use
+        open: open the rendered file in the default application (default to True if no outfile is given)
 
-    Returns: the path to the oufile written
+    Returns: 
+        the path to the oufile written
     """
     if outfile is None:
         import tempfile
