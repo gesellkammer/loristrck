@@ -1,4 +1,0 @@
-numpy > 1.13
-cython > 0.28
-pysndfile 
-numpyx 

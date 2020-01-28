@@ -12,3 +12,4 @@ loristrck/*.cpp
 .deps
 .idea
 .mypy*
+wheelhouse
