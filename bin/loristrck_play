@@ -29,19 +29,7 @@ def play_sdif(inputfile, sr=44100, speed=1, transposition=0):
     play_samples(samples, sr=sr)
 
 
-def play_samples_sounddevice(samples, sr):
-    try:
-        import sounddevice
-    except ImportError:
-        return False
-    sounddevice.play(samples, samplerate=sr, blocking=True)
-    return True
-
-
 def play_samples(samples, sr):
-    if play_samples_sounddevice(samples, sr=sr):
-        return
-    print("Install sounddevice to be able to play samples directly")
     outfile = tempfile.mktemp(suffix=".wav", prefix="loristrck-")
     loristrck.wavwrite(outfile, samples, sr)
     play_sndfile(outfile)
