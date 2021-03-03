@@ -3,7 +3,7 @@ LORISTRCK
 
 `loristrck` is a wrapper for the C++ partial-tracking library Loris.
 
-It is written in cython and targets python 3. The source of the library is included 
+It is written in cython and targets python 3 (>= 3.8 at the moment). The source of the library is included 
 as part of the project and does not need to be installed previously.
 
 

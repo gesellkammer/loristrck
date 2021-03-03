@@ -13,3 +13,7 @@ loristrck/*.cpp
 .idea
 .mypy*
 wheelhouse
+*.wav
+*.aif
+*.aiff
+*.flac

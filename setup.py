@@ -1,24 +1,17 @@
 '''
-LORISTRCK: a basic wrapper around the partial-tracking library Loris
+LORISTRCK: a library for sound analysis based on the partial-tracking library Loris
 
-This is the simplest wrapper possible for the partial-tracking library Loris.
-The source of the library is included as part of the project --there is no need
-to install the library independently.
-
-The main goal was as an analysis tool for the package `sndtrck`, which
-implements an agnostic data structure to handle partial tracking information
-
-Dependencies:
-
-* fftw3
+The unerlying c++ library is included as part of the project --there is no need
+to install it independently.
 
 '''
+
 import os
 import sys
 import glob
 from setuptools import setup, Extension
 
-VERSION = '0.9.5'
+VERSION = '1.0.0'
 
 class get_numpy_include(str):
     def __str__(self):
@@ -110,11 +103,9 @@ loris_exclude += [os.path.join(loris_base, filename) for filename in (
 loris_sources = list(set(loris_sources) - set(loris_exclude))
 sources.extend(loris_sources)
 
-doc_lines = __doc__.split('\n')
-
 setup(
     name='loristrck',
-    python_requires='>=3.6',
+    python_requires='>=3.8',
     ext_modules = [
         Extension(
             'loristrck._core',
@@ -128,7 +119,7 @@ setup(
         )
     ],
     packages=['loristrck'],
-    scripts=['bin/loristrck_analyze', 'bin/loristrck_pack', 'bin/loristrck_play'],
+    scripts=['bin/loristrck_analyze', 'bin/loristrck_pack', 'bin/loristrck_play', 'bin/loristrck_chord'],
     setup_requires=[
         'numpy>=1.8',
         'cython>=0.25'
@@ -137,7 +128,8 @@ setup(
         'numpy>=1.8',
         'cython>=0.25',
         'numpyx',
-        'soundfile'
+        'soundfile',
+        'sounddevice'
     ],
     
     url='https://github.com/gesellkammer/loristrck',
@@ -147,6 +139,6 @@ setup(
     author_email='eduardo.moguillansky@gmail.com',
     platforms=['Linux', 'Mac OS-X', 'Windows'],
     version=VERSION,
-    description=doc_lines[0],
-    long_description='\n'.join(doc_lines[2:]),            
+    description="A wrapper around the partial-tracking library Loris",
+    long_description=__doc__            
 )
