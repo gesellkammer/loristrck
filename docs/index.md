@@ -6,7 +6,7 @@ Welcome to the loristrck documenttion!
 
 It is written in cython and targets python 3 (>= 3.8 at the moment). 
 
-# Quick Introduction
+## Quick Introduction
 
 ```python
 
@@ -34,7 +34,7 @@ lt.partials_render(noise, outfile="residual.wav")
 lt.write_sdif(partials, "analysis.sdif")
 ```
 
-### selected.wav
+**selected.wav**
 
 ![](assets/sine.png)
 
@@ -43,7 +43,7 @@ lt.write_sdif(partials, "analysis.sdif")
   <source type="audio/ogg" src="assets/sine.ogg"></source>
 </audio>
 
-### residual.wav
+**residual.wav**
 
 ![](assets/noise.png)
 
@@ -91,10 +91,53 @@ lt.partials_render(selected, outfile="stretched.wav")
 
 ----
 
-# Installation
+## Installation
 
+**loristrck** currently needs **python >= 3.8**. For all platforms a working compil
 
+### Dependencies
 
-# Reference
+**loristrck** depends on the following external libraries:
 
-[Reference](reference.md)
+* `fftw`
+* `libsndfile` 
+
+----
+
+### macOS
+
+To install **loristrck** and all its dependencies:
+
+```bash
+brew install fftw
+brew install libsndfile
+pip install loristrck
+```
+
+----
+
+### Linux
+
+For debian/ubuntu, the dependencies can be installed via `apt`:
+
+```bash
+sudo apt install libfftw3-dev libsndfile1-dev
+pip install loristrck
+```
+
+----
+
+### Windows
+
+* Install ``libsndfile`` from http://www.mega-nerd.com/libsndfile/#Download
+* Install ``fftw3`` from http://www.fftw.org/install/windows.html
+* Unzip to a directory of your choicc (suggestion: ``C:\\src``). You should have a folder ``C:\\src\\fftw`` 
+* Put that directory in your PATH (Control Panel/System/Advanced/Environmental Variables/)
+
+```
+pip install loristrck
+
+```
+
+The ``loris`` library is included and compiled into the cython bindings. 
+
