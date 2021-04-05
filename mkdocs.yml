@@ -1,0 +1,9 @@
+site_name: loristrck
+theme:
+    name: material
+markdown_extensions:
+    - pymdownx.highlight
+    - pymdownx.superfences
+    - admonition
+
+use_directory_urls: false

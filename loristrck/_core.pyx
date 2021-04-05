@@ -220,25 +220,6 @@ cdef loris.Partial* newPartial_fromarray(_np.ndarray[SAMPLE_t, ndim=2] a, float 
         p.fadeOut(fadetime)
     return p
 
-
-def test_conversion(m):
-    cdef loris.Partial *p = newPartial_fromarray(m)
-    m2 = Partial_toarray(p)
-    print(len(m), p.numBreakpoints(), len(m2))
-    del p
-    return m2
-
-
-def test_conversion2(ms):
-    cdef loris.Partial *p
-    cdef loris.PartialList *pl = new loris.PartialList()
-    for m in ms:
-        p = newPartial_fromarray(m)
-        pl.push_back(deref(p))
-        del p
-    ms2 = PartialList_toarray(pl)
-    del pl
-    return ms2
     
 
 def read_sdif(path):
