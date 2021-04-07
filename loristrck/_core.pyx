@@ -36,57 +36,54 @@ def analyze(double[::1] samples not None, double sr, double resolution, double w
     If outfile is given, a sdif file is saved with the results of the analysis
 
     There are three categories of analysis parameters:
-        - the resolution and params related to it (freq. floor and drift)
-        - the window width and params related to it (hop and crop times)
-        - independent parameters (bw region width and amp floor)
 
-    * samples: numpy.ndarray
-        An array representing a mono sndfile.   
-    * sr: int (Hz)
-        The sampling rate
-    * resolution: Hz 
-        Only one partial will be found within this distance. 
-        Usual values range from 30 Hz to 200 Hz. As a rule of thumb, when tracking a
-        monophonic source, resolution ~= min(f0) * 0.9
-        So if the source is a male voice dropping down to 70 Hz, resolution=60 Hz 
-    * windowsize: Hz.
-        Is the main lobe width of the Kaiser analysis window in Hz (main-lobe, zero to zero)
-        If not given, a default value is calculated. 
-        The size of the window in samples can be calculated by:
-        util.kaiserLength(windowsize, sr, sidelobe)
-    * hoptime: sec
-        The time to move the window after each analysis. 
-        Default: 1/windowsize. "hop time in secs is the inverse of the window width
-        really. A good choice of hop is the window length divided by the main lobe width 
-        in freq. samples, which turns out to be just the inverse of the width."
-        A lower hoptime can be used: for instance a 2x overlap would result in a hoptime
-        of hoptime=1/windowsize*0.5
-        NB: when using overlap, croptime should still be 1/windowsize
-    * freqdrift: Hz  
-        The maximum variation of frecuency between two breakpoints to be
-        considered to belong to the same partial. A sensible value is
-        between 1/2 to 3/4 of resolution: freqdrift=0.62*resolution
-    * sidelobe: dB (default: 90 dB)
-        A positive dB value, indicates the shape of the Kaiser window
-    * ampfloor: dB  
-        A breakpoint with an amp < ampfloor can't be part of a partial
-    * croptime: sec 
-        Max. time correction beyond which a reassigned bp is considered 
-        unreliable, and not eligible. Default: the hop time. 
-    * residuebw: Hz (default = 2000 Hz)
-        Construct Partial bandwidth env. by associating residual energy with 
-        the selected spectral peaks that are used to construct Partials.
-        The bandwidth is the width (in Hz) association regions used.
-        Defaults to 2 kHz, corresponding to 1 kHz region center spacing.
-        NB: if residuebw is set, convergencebw must be left unset
-    * convergencebw: range [0, 1]
-        Construct Partial bandwidth env. by storing the 
-        mixed derivative of short-time phase, scaled and shifted.  
-        The value is the amount of range over which the mixed derivative 
-        indicator should be allowed to drift away from a pure sinusoid 
-        before saturating. This range is mapped to bandwidth values on
-        the range [0,1].  
-        NB: one can set residuebw or convergencebw, but not both
+    - the resolution and params related to it (freq. floor and drift)
+    - the window width and params related to it (hop and crop times)
+    - independent parameters (bw region width and amp floor)
+
+    Args:
+        samples: numpy.ndarray. An array representing a mono sndfile.   
+        sr: int (Hz). The sampling rate
+        resolution: Hz. Only one partial will be found within this distance. 
+            Usual values range from 30 Hz to 200 Hz. As a rule of thumb, when tracking a
+            monophonic source, resolution ~= min(f0) * 0.9
+            So if the source is a male voice dropping down to 70 Hz, resolution=60 Hz 
+        windowsize: Hz. Is the main lobe width of the Kaiser analysis window in Hz 
+            (main-lobe, zero to zero). If not given, a default value is calculated. 
+            The size of the window in samples can be calculated by:
+            `util.kaiserLength(windowsize, sr, sidelobe)`
+        hoptime: sec. The time to move the window after each analysis. 
+            Default: 1/windowsize. "hop time in secs is the inverse of the window width
+            really. A good choice of hop is the window length divided by the main lobe width 
+            in freq. samples, which turns out to be just the inverse of the width."
+            A lower hoptime can be used: for instance a 2x overlap would result in a hoptime
+            of hoptime=1/windowsize*0.5
+            **NB**: when using overlap, croptime should still be 1/windowsize
+        freqdrift: Hz. The maximum variation of frecuency between two breakpoints to be
+            considered to belong to the same partial. A sensible value is
+            between 1/2 to 3/4 of resolution: freqdrift=0.62*resolution
+        sidelobe: dB (default: 90 dB). A positive dB value, indicates the shape of the Kaiser window
+        ampfloor: dB. A breakpoint with an amp < ampfloor can't be part of a partial
+        croptime: sec. Max. time correction beyond which a reassigned bp is considered 
+            unreliable, and not eligible. Default: the hop time. 
+        residuebw: Hz (default = 2000 Hz). Construct Partial bandwidth env. by associating 
+            residual energy with the selected spectral peaks that are used to construct Partials.
+            The bandwidth is the width (in Hz) association regions used.
+            Defaults to 2 kHz, corresponding to 1 kHz region center spacing.
+            NB: if residuebw is set, convergencebw must be left unset
+        convergencebw: range [0, 1]. Construct Partial bandwidth env. by storing the 
+            mixed derivative of short-time phase, scaled and shifted.  
+            The value is the amount of range over which the mixed derivative 
+            indicator should be allowed to drift away from a pure sinusoid 
+            before saturating. This range is mapped to bandwidth values on
+            the range [0,1].  
+            **NB**: one can set residuebw or convergencebw, but not both
+    
+    Returns:
+        a list of numpy 2D arrays, where each array represents a partial. Any such array
+        has a shape = (numrows, 5), where numrows is the number of breakpoints in the
+        partial, each breakpoint consists of 5 values: time, freq, amplitude, phase and bandwidth
+
     """
     if windowsize < 0:
         windowsize = resolution * 2  # original Loris behaviour
@@ -140,6 +137,18 @@ cdef double kaiserWindowShape(double atten):
 
 
 cpdef int kaiserWindowLength(double width, double sr, double sidelobe) except -1:
+    """
+    Returns the window length (in samples) of a kaiser window with the
+    given properties
+
+    Args:
+        width: the width of the window in Hz. 
+        sr: the sample rate
+        sidelobe: in possitive dB
+
+    Returns:
+        the length of the window in samples
+    """
     # copyied from KaiserWindow for brevity
     if sidelobe < 0:
         raise ValueError("sidelobe should be a possitive dB value")
@@ -221,22 +230,18 @@ cdef loris.Partial* newPartial_fromarray(_np.ndarray[SAMPLE_t, ndim=2] a, float 
     return p
 
     
-
 def read_sdif(path):
     """
     Read the SDIF file
 
-    sdiffile: (str) The path to a SDIF file
+    Args:
+        sdiffile: (str) The path to a SDIF file
 
-    Returns
-    ~~~~~~~
-
-    (list of partialdata, labels)
-
-    Partialdata is a a list of 2D matrices. Each matrix is a partial, 
-    where each row is a breakpoint of the form (time, freq, amp, phase, bw)
-
-    labels: a list of the labels for each partial
+    Returns:
+        a tuple(list of partials, labels), where a partial is a 2D numpy
+        array with shape (num. breakpoints, 5) with the columns (time, 
+        frequency, amplitude, phase and bandwidth). `labels` is list of 
+        the labels for each partial
     """
     cdef loris.SdifFile* sdif
     cdef loris.PartialList partials
@@ -267,17 +272,27 @@ def _isiterable(seq):
 
 
 cdef class PartialListW:
+    """
+    This is a wrapper around a loris.PartialList
+    """
     cdef loris.PartialList *thisptr
     
     def __dealloc__(self):
         PartialList_destroy(self.thisptr)
         
     def dump(self):
+        """
+        Dump the partials in this partial list
+        """
         PartialList_dump(self.thisptr)
 
     def setlabels(self, labels):
         """
-        labels: a seq. of int
+        Sets the labels in this partials list
+
+        Args:
+            labels (list[int]): It should be of the same length of 
+                this partials list
         """
         assert _isiterable(labels)
         PartialList_setlabels(self.thisptr, labels)
@@ -294,8 +309,19 @@ cdef class PartialListW:
         return self.thisptr.size()
 
 
-cpdef PartialListW newPartialList(dataseq, labels=None, double fadetime=0):
-    cdef loris.PartialList *plist = PartialList_fromdata(dataseq, fadetime)
+cpdef PartialListW newPartialList(partials, labels=None, double fadetime=0):
+    """
+    Creates a new loris PartialList from the given data, and a PartialListW 
+    (a wrapper) around that PartialList
+
+    Args:
+        partials: a list of numpy arrays, where each array represents a partial.
+            Each partial is a 2D array of shape (num rows, 5) with columns
+            (time, freq, amp, phase, bandwidth)
+        labels: if given, a list of integers of the same length as partials
+        fadetime: a fadetime applied to each partial when synthesizing
+    """
+    cdef loris.PartialList *plist = PartialList_fromdata(partials, fadetime)
     cdef PartialListW self = PartialListW()
     self.thisptr = plist
     if labels is not None:
@@ -309,12 +335,21 @@ def write_sdif(partials, outfile, labels=None, rbep=True, double fadetime=0):
     """
     Write a list of partials in the sdif 
     
-    partials: a seq. of 2D arrays with columns [time freq amp phase bw]
-    outfile: the path of the sdif file
-    labels: a seq. of integer labels, or None to skip saving labels
-    rbep: if True, use RBEP format, otherwise, 1TRC
+    !!! note
 
-    NB: The 1TRC format forces resampling
+        The 1TRC format forces resampling, since all breakpoints within a 
+        1TRC frame need to share the same timestamp. In the RBEP format
+        a breakpoint has a time offset to the frame time stamp
+    
+    Args:
+        partials: a seq. of 2D arrays with columns [time freq amp phase bw]
+        outfile: the path of the sdif file
+        labels: a seq. of integer labels, or None to skip saving labels
+        rbep: if True, use RBEP format, otherwise, 1TRC
+
+    Returns:
+        None
+
     """
     assert _isiterable(partials)
     cdef loris.PartialList *ps = PartialList_fromdata(partials, fadetime)
@@ -402,13 +437,16 @@ def read_aiff(path):
     """
     Read a mono AIFF file (Loris does not read stereo files)
 
-    path: (str) The path to the soundfile (.aif or .aiff)
+    !!! note
 
-    NB: Raises ValueError if the soundfile is not mono
+        Raises ValueError if the soundfile is not mono
 
-    --> A tuple (audiodata, samplerate)
+    Args:
+        path: (str) The path to the soundfile (.aif or .aiff)
 
-    audiodata : 1D numpy array of type double, holding the samples
+    Returns:
+        A tuple (audiodata, samplerate), where audiodata is a 1D numpy 
+        array of type double, holding the samples
     """
     cdef loris.AiffFile* aiff = new loris.AiffFile(string(<char*>path))
     cdef vector[double] samples = aiff.samples()
@@ -444,20 +482,22 @@ cdef object PartialList_timespan(loris.PartialList * partials):
     return tmin, tmax
 
 
-def synthesize(dataseq, int samplerate, double fadetime=-1, double start=-1, double end=-1):
+def synthesize(partials, int samplerate, double fadetime=-1, double start=-1, double end=-1):
     """
-    dataseq:    a seq. of 2D matrices, each matrix represents a partial
-                Each row is a breakpoint of the form [time freq amp phase bw]
-    
-    samplerate: the samplerate of the synthesized samples (Hz)
-    
-    fadetime:   to avoid clicks, partials not ending in 0 amp should be faded
-                If negative, a sensible default is used (currently about 3 ms). 
-                A minimum fadetime is always applied, even if 0 is given.
-    start, end: if given, only the given time range is synthesized. 
-                -1 can be given to indicate the start/end of the data
+    Synthesize the partials as audio
 
-    --> samples: numpy 1D array of doubles holding the samples
+    Args:
+        partials: a seq. of 2D matrices, each matrix represents a partial
+            Each row is a breakpoint of the form [time freq amp phase bw]
+        samplerate: the samplerate of the synthesized samples (Hz)
+        fadetime: to avoid clicks, partials not ending in 0 amp should be faded
+            If negative, a sensible default is used (currently about 3 ms). 
+            A minimum fadetime is always applied, even if 0 is given.
+        start: the start time of synthesis (-1 = start of data)
+        end: the end time of synthesis (-1 = end of data) 
+                    
+    Returns:
+        the synthesized samples, a numpy 1D array of doubles holding the samples
     """
     cdef int minfadesamps = 16
     cdef float minfade = float(minfadesamps) / samplerate
@@ -469,7 +509,7 @@ def synthesize(dataseq, int samplerate, double fadetime=-1, double start=-1, dou
             fadetime = minfade
             logger.debug("fadetime is too small. Using fadetime=%f (%d samples)" % (minfade, minfadesamps))
         fadetime = max(fadetime, 10.0 / samplerate)
-    cdef list matrices = dataseq if isinstance(dataseq, list) else list(dataseq)
+    cdef list matrices = partials if isinstance(partials, list) else list(partials)
     cdef _np.ndarray [SAMPLE_t, ndim=2] m
     cdef double t0, t1, mt0, mt1
     if start < 0 or end <= 0:
@@ -577,41 +617,42 @@ cdef tuple PartialList_estimatef0_with_confidence(loris.PartialList *plist,
     return freqs, confs, t0, t1
 
 
-def estimatef0(matrices, double minfreq, double maxfreq, double interval):
+def estimatef0(partials, double minfreq, double maxfreq, double interval):
     """
-    Estimate the fundamental 
+    Estimate the fundamental as a curve in time. To each freq. value there 
+    is a confidency value, where 1 represents maximum confidency, and values 
+    below 0.9 indicate unvoiced or very faint sounds. 
 
-    * matrices: a seq. of numpy 2D matrices, each matrix representing a partial
-    * minfreq, maxfreq: freq. range where to look for a fundamental
-    * interval: the time resolution of the fundamental
-
-    Returns freqs, confidencies, t0, t1
-
-    * freqs: numpy.array. The frequencies of the f0
-    * confidences: numpy.array, same size as freqs, contains the confiency of 
-                   each freq value
-    * t0, t1: the timespan of this spectrum. To calculate the times axes, use
-              numpy.arange(t0, t1, interval)
-
-    These represent a linear interpolation of the frequency of the fundamental
-    within the timespan t0-t1 with a grid defined by `interval`.
-    To each freq. value there is a confidency value, where 1 represents maximum
-    confidency, and values below 0.9 indicate unvoiced or very faint sounds. 
-
-    Example 1
-    =========
+    ## Example
+    
+    ```python
 
     import scipy.interpolate
-    matrices, labels = read_sdif("path/to/sdif")
+    partials, labels = read_sdif("path/to/sdif")
     dt = 0.05  # estimate f0 at a 50 ms interval
-    freqs, confidencies, t0, t1 = estimatef0(matrices, 50, 2000, dt)
+    freqs, confidencies, t0, t1 = estimatef0(partials, 50, 2000, dt)
     freqs *= confidences > 0.9
     times = numpy.arange(t0, t1, dt)
     f0 = scipy.interpolate.interp1d(times, freqs)
-    
     print(f0(0.8))
+    
+    ```
+
+    Args:
+        partials: a seq. of numpy 2D partials, each matrix representing a partial
+        minfreq: min. freq to look for a fundamental
+        maxfreq: max. freq to look for a fundamental
+        interval: time resolution of the fundamental curve
+
+    Returns:
+        a tuple (freq, confidencies, start_time, end_time), where freqs is a
+        numpy array holding the frequencies in time, confidencies is a numpy
+        array with confidence values for each frequency measurement and start
+        time and end time hold the start and end time of the measurements. 
+        All times can be calculated via `numpy.arange(start_time, end_time, interval)
+    
     """
-    cdef loris.PartialList *pl = PartialList_fromdata(matrices, 0)
+    cdef loris.PartialList *pl = PartialList_fromdata(partials, 0)
     out = PartialList_estimatef0_with_confidence(pl, minfreq, maxfreq, interval)
     del pl
     return out
