@@ -1,6 +1,6 @@
 # loristrck
 
-Welcome to the loristrck documenttion!
+Welcome to the **loristrck** documentation!
 
 **loristrck** is a wrapper for the C++ library [Loris](<https://sourceforge.net/projects/loris/files/Loris/>).
 
