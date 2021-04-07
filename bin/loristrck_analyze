@@ -63,7 +63,7 @@ else:
     outfile = args.outfile
 
 sdiftype = args.sdiftype.lower()
-assert args.sdiftype in ('1trc', 'rbep')
+assert sdiftype in ('1trc', 'rbep')
 
 loristrck.write_sdif(partials, outfile, rbep=sdiftype=='rbep', fadetime=args.fadetime)
 
