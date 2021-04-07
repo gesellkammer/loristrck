@@ -18,7 +18,7 @@ samples, sr = lt.sndreadmono("voice.wav")
 # Analyze the soundfile with a frequency resolution of 30 Hz and 
 # a window size of 40 Hz. A hoptime of 1/120 will result in 4x overlap
 partials = lt.analyze(samples, sr, resolution=30, windowsize=40, 
-                      [Ohoptime=1/120)
+                      hoptime=1/120)
 
 # partials is a python list of numpy arrays
 # select a subset of most significant partials
