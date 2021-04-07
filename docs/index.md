@@ -93,6 +93,8 @@ lt.partials_render(selected, outfile="stretched.wav")
 
 ## Installation
 
+The source of **loristrck** is hosted at https://github.com/gesellkammer/loristrck/
+
 **loristrck** currently needs **python >= 3.8**. For all platforms a working compil
 
 ### Dependencies
