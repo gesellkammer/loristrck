@@ -1,6 +1,14 @@
 # Reference
 
-## analyze
+The functions documented here are implemented in cython and interact directly with
+the underlying C++ code in *Loris*. 
+
+!!! info
+
+    See also [loristrck.util](util.md) for supporting utilities regarding transformation 
+    of partials, rendering, plotting, etc.
+
+-----
 
 ```python
 def analyze(samples: np.ndarray, 
@@ -245,8 +253,7 @@ Estimate the fundamental of a previously analyzed sound
 def estimatef0(partials: list[np.ndarray, 
                minfreq: float, 
                maxfreq: float,
-               interval: float
-               
+               interval: float  
                ) -> tuple[freqs: np.ndarray, 
                           confidencies: np.ndarray, 
                           starttime: float, 
@@ -303,7 +310,8 @@ The average over the given column
 Calculate the weighted mean over a given column and using another column as the weights
 
 ``` python
-def meancol(X: np.ndarray, col: int, colw: int) -> float
+def meancol(X: np.ndarray, col: int, colw: int
+            ) -> float
 
 ```
 
@@ -327,134 +335,10 @@ import loristrck as lt
 partials, labels = lt.read_sdif("analysis.sdif")
 for i, partial in enumerate(partials):
     # average frequency using amplitude as weight
-    freq = meancolw(partial, 1, 2)
+    freq = lt.meancolw(partial, 1, 2)
     print(f"Partial #{i}, avg. freq: {fre} Hz")
 ```
 
 ---------------------------------
 
-## concat
-
-Concatenate multiple Partials to produce a new one.
-Assumes that the partials are non-overlapping and sorted
-
-``` python
-def concat(partials: list[np.ndarray], 
-           fade=0.005, 
-           edgefade=0.
-           ) -> np.ndarray
-```
-
-#### Args
-
-* **partials**: a seq. of partials (each partial is a 2D-array)
-* **fade**: fadetime to apply at the end/beginning of each concatenated partial
-* **edgefade**: a fade to apply at the beginning of the first and at the end of the last partial
-
-#### Returns
-
-A numpy array representing the concatenation of the given partials
-
-!!! note
-
-    partials need to be non-simultaneous and sorted
- 
--------------------------------------
-
-## pack
-
-``` python
-def pack(partials: list[np.ndarray],
-         maxtracks:int=0,
-         gap:float=0.010,
-         fade:float=-1.,
-         acceptabledist=0.100,
-         minbps:int=2) -> Tuple[List[np.ndarray], List[np.ndarray]]:
-
-```
-Pack non-simultenous partials into longer partials with 
-silences in between. These packed partials can be used
-as tracks for resynthesis, minimizing the need of oscillators.
-
-#### Args
-
-* partials: a list of arrays, where each array represents a partial,
-  as returned by analyze
-* maxtracks: if > 0, sets the maximum number of tracks. Partials not
-  fitting in will be discarded. Consider living this at 0, to allow
-  for unlimited tracks, and limit the amount of active streams later on
-* gap: minimum gap between partials in a track. Should be longer than
-  2 times the sampling interval, if the packed partials are later
-  going to be resampled.
-* fade: apply a fade to the partials before joining them.
-  If not given, a default value is calculated
-* acceptabledist: instead of searching for the best possible fit, pack 
-  two partials together if they are near enough
-
-#### Returns
-
-A tuple (tracks, unpacked partials)
-
-!!! note
-
-    amplitude is always faded out between partials
-    
-#### See also
-
-* `partials_save_matrix`
-
-----------------------------
-
-## select 
-
-Selects a seq. of partials matching the given conditions
-
-``` python
-def select(partials,
-           mindur=0,
-           minamp=-120,
-           maxfreq=24000,
-           minfreq=0,
-           minbps=1,
-           t0=0.,
-           t1=0.
-           ) -> tuple[list[np.ndarray], list[np.ndarray]]
-```
-
-#### Args
-
-* **partias**: the partials to subject to selection
-* **mindur**: the min. duration for partial to be selected
-* **minamp**: the min. amp (in dB) for partial to be selected
-* **maxfreq**: the max. avg freq of the partial to be selected. 
-* **minfre**: the min. avg freq of the partial for it to be selected
-* **minbps**: the min. number of breakpoints
-* **t0**, **t1**: only partials defined within this time range will be selected
-
-#### Returns
-
-A tuple (selected, not selected), where each is a list of partials as numpy arrays
-
---------------------------------
-
-## partials_save_matrix
-
-Packs short partials into longer partials, samples these
-at period `dt` and saves the resulting matrix
-
-``` python
-def partials_save_matrix(partials: list[np.ndarray],
-                         outfile: str,
-                         dt: float = None,
-                         gapfactor:float=3.,
-                         maxtracks:int=0,
-                         maxactive:int=0
-                         ) -> tuple[list[np.ndarray], nd.ndarray]
-```
-
-#### Args
-
-#### Returns
-
-#### Example
 

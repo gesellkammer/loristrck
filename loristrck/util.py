@@ -1,3 +1,21 @@
+"""
+Utility functions to manipulate / transform partials and list of partials
+
+## Example 1
+
+Select a group of partials and render the selection as sound
+
+```python
+
+import loristrck as lt
+partials = lt.read_sdif(...)
+selected, _ = lt.util.select(partials, minbps=2, mindur=0.005, 
+                             minamp=-80, maxfreq=17000)
+lt.util.patials_render(partials, 44100, "selected.wav")
+
+```
+
+"""
 from __future__ import annotations
 import os
 import numpy as np
@@ -30,13 +48,19 @@ __all__ = [
     "partials_transpose",
     "partials_between",
     "partials_at",
-    "partials_render"
+    "partials_render",
+    "estimate_sampling_interval",
+    "pack",
+    "partials_save_matrix",
+    "partials_sample",
+    
 ]
 
 
 def concat(partials: List[np.ndarray], fade=0.005, edgefade=0.) -> np.ndarray:
     """
     Concatenate multiple Partials to produce a new one.
+    
     Assumes that the partials are non-overlapping and sorted
 
     !!! note
@@ -182,11 +206,17 @@ def pack(partials: List[np.ndarray],
          acceptabledist=0.100,
          minbps:int=2) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """
-    Pack non-simultenous partials into longer partials with
-    silences in between. These packed partials can be used
-    as tracks for resynthesis, minimizing the need
+    Pack non-simultenous partials into longer partials with silences in between. 
+
+    These packed partials can be used as tracks for resynthesis, minimizing the need
     of oscillators.
 
+    !!! note
+    
+        Amplitude is always faded out between partials
+
+    **See also**: [partials_save_matrix](util.md#partials_save_matrix)
+    
     Args:
         partials: a list of arrays, where each array represents a partial,
             as returned by analyze
@@ -207,11 +237,6 @@ def pack(partials: List[np.ndarray],
     Returns:
         a tuple (tracks, unpacked partials)
 
-    !!! note
-    
-        Amplitude is always faded out between partials
-
-    See also: partials_save_matrix
     """
     assert all(isinstance(p, np.ndarray) for p in partials)
     mingap = 0.010
@@ -342,7 +367,7 @@ def partial_crop(p: np.ndarray, t0:float, t1:float) -> np.ndarray:
         t1: the end time
 
     Returns:
-        the cropped partial (raises ValueError if the partial is not defined
+        the cropped partial (raises `ValueError`) if the partial is not defined
         within the given time constraints)
 
     !!! note
@@ -375,8 +400,7 @@ def partial_crop(p: np.ndarray, t0:float, t1:float) -> np.ndarray:
 def partials_sample(sp: List[np.ndarray], dt=0.002, t0:float=-1, t1:float=-1, 
                     maxactive=0, interleave=True):
     """
-    Samples the partials between times `t0` and `t1` with a sampling
-    period `dt`.
+    Samples the partials between times `t0` and `t1` with a sampling period `dt`
 
     Args:
         sp: a list of 2D-arrays, each representing a partial
@@ -401,7 +425,7 @@ def partials_sample(sp: List[np.ndarray], dt=0.002, t0:float=-1, t1:float=-1,
     To be used in connection with `pack`, which packs short non-simultaneous
     partials into longer ones. The result is a 2D matrix representing the partials.
 
-    Sampling times is calculated as: times = arange(t0, t1+dt, dt)
+    Sampling times is calculated as: `times = arange(t0, t1+dt, dt)`
 
     If interleave is True, it returns a big matrix of format
 
@@ -414,7 +438,7 @@ def partials_sample(sp: List[np.ndarray], dt=0.002, t0:float=-1, t1:float=-1,
     ```
 
     Where (f0, amp0, bw0) represent the freq, amplitude and bandwidth
-    of partial 0 at a given time, (f1, amp1, bw0) the corresponding data
+    of partial 0 at a given time, `(f1, amp1, bw0)` the corresponding data
     for partial 1, etc.
 
     If interleave is False, it returns three arrays: freqs, amps, bws
@@ -506,6 +530,21 @@ def partial_energy(partial: np.ndarray) -> float:
     """
     Integrate the partial amplitude over time. Serves as measurement
     for the energy contributed by the partial.
+
+    ### Example
+
+    Select loudest partials within the range 50 Hz - 6000 Hz
+
+    ```python
+
+    import loristrck as lt
+    partials = lt.read_sdif("path.sdif")
+    partials2 = lt.util.select(partials, minfreq=50, maxfreq=6000, 
+                               minbps=4, mindur=0.005)
+    sorted_partials = sorted(partials2, key=lt.util.partial_energy, reverse=True)
+    loudest = sorted_partials[:100]
+    lt.util.plot_partials(loudest)
+    ```
     """
     dur = partial[-1, 0] - partial[0, 0]
     return meanamp(partial) * dur
@@ -700,27 +739,26 @@ def wavwrite(outfile, samples, sr=44100, bits=32):
     """
     Write samples to a wav-file (see also sndwrite) as float32 or float64
     """
-    f = _wavwriter(outfile, sr=sr, bits=bits, channels=numchannels(samples))
+    f = _wavwriter(outfile, sr=sr, bits=bits, channels=_numchannels(samples))
     f.write(samples)
     f.close()
 
 
 def partials_save_matrix(partials: List[np.ndarray], outfile:str, dt:float=None,
                          gapfactor=3., maxtracks=0, maxactive=0
-                         ) -> Tuple[List[npndarray], np.ndarray]:
+                         ) -> Tuple[List[np.ndarray], np.ndarray]:
     """
-    Packs short partials into longer partials, samples these
-    at period `dt` and saved the resulting matrix to a soundfile
-    (wav or aif)
+    Packs short partials into longer partials and saves the result as a matrix
 
     ### Example
     
     ```python
     
-        import loristrck as lt
-        partials, labels = lt.read_sdif(sdiffile)
-        selected, rest = lt.select(partials, minbps=2, mindur=0.005, minamp=-80)
-        partials_save_matrix(selected, 0.002, "packed.wav")
+    import loristrck as lt
+    partials, labels = lt.read_sdif(sdiffile)
+    selected, rest = lt.util.select(partials, minbps=2, mindur=0.005, minamp=-80)
+    lt.util.partials_save_matrix(selected, 0.002, "packed.wav")
+
     ```
     
     Args:
@@ -759,7 +797,7 @@ def partials_save_matrix(partials: List[np.ndarray], outfile:str, dt:float=None,
     return tracks, mtx
 
 
-def numchannels(samples: np.ndarray) -> int:
+def _numchannels(samples: np.ndarray) -> int:
     return 1 if samples.ndim == 1 else samples.shape[1]
 
 
@@ -780,14 +818,14 @@ def sndreadmono(path: str, chan: int = 0, contiguous=True
         a tuple (samples:np.ndarray, sr:int)
     """
     samples, sr = soundfile.read(path)
-    if numchannels(samples) > 1:
+    if _numchannels(samples) > 1:
         samples = samples[:, chan]
     if contiguous:
         samples = np.ascontiguousarray(samples)
     return samples, sr
 
 
-def sndwrite(samples: np.ndarray, sr: int, path: str, encoding=None) -> None:
+def sndwrite(samples: np.ndarray, sr: int, path: str, encoding:str=None) -> None:
     """
     Write the samples to a soundfile
 
@@ -828,13 +866,13 @@ def sndwrite(samples: np.ndarray, sr: int, path: str, encoding=None) -> None:
     f = soundfile.SoundFile(path,
                             mode="w",
                             samplerate=sr,
-                            channels=numchannels(samples),
+                            channels=_numchannels(samples),
                             subtype=subtype)
     f.write(samples)
     f.close()
 
 
-def plot_partials(partials: t.List[np.ndarray],
+def plot_partials(partials: List[np.ndarray],
                   downsample: int = 1,
                   cmap='inferno',
                   exp=1.0,
@@ -943,8 +981,9 @@ def estimate_sampling_interval(partials: List[np.ndarray],
                                ksmps=64,
                                sr=44100) -> float:
     """
-    Estimate a sampling interval (dt) for this spectrum, based on the timing of
-    the partials. The usage is to find a sampling interval which neither oversamples
+    Estimate a sampling interval (dt) for this spectrum
+
+    The usage is to find a sampling interval which neither oversamples
     nor undersamples the partials for a synthesis strategy based on blocks of
     computation (like in csound, supercollider, etc, where each ugen is given
     a buffer of samples to fill instead of working sample by sample)

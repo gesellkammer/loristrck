@@ -5,7 +5,9 @@ theme:
         - navigation.tabs
         - navigation.sections
 
-    
+extra_css:
+  - stylesheets/extra.css
+      
 markdown_extensions:
     - toc:
         toc_depth: 2
@@ -17,3 +19,8 @@ use_directory_urls: false
 
 repo_url: https://github.com/gesellkammer/loristrck
 
+nav:
+    - index.md 
+    - reference.md
+    - util.md
+    - commandline.md
