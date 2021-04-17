@@ -11,7 +11,7 @@ import sys
 import glob
 from setuptools import setup, Extension
 
-VERSION = '1.1.1'
+VERSION = '1.2.0'
 
 class get_numpy_include(str):
     def __str__(self):
