@@ -119,7 +119,8 @@ setup(
         )
     ],
     packages=['loristrck'],
-    scripts=['bin/loristrck_analyze', 'bin/loristrck_pack', 'bin/loristrck_play', 'bin/loristrck_chord'],
+    scripts=['bin/loristrck_analyze', 'bin/loristrck_pack', 'bin/loristrck_play',
+             'bin/loristrck_chord'],
     setup_requires=[
         'numpy>=1.8',
         'cython>=0.25'
@@ -129,7 +130,8 @@ setup(
         'cython>=0.25',
         'numpyx',
         'soundfile',
-        'sounddevice'
+        'sounddevice',
+        'pysdif3>=0.6.0'
     ],
     
     url='https://github.com/gesellkammer/loristrck',

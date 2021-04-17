@@ -23,7 +23,7 @@ import numpyx as npx
 import soundfile
 import logging
 import math
-from typing import Tuple, Union as U, List
+from typing import Tuple, Union as U, List, Optional as Opt
 import sys
 
 from . import _core
@@ -52,8 +52,7 @@ __all__ = [
     "estimate_sampling_interval",
     "pack",
     "partials_save_matrix",
-    "partials_sample",
-    
+   
 ]
 
 
@@ -84,14 +83,14 @@ def concat(partials: List[np.ndarray], fade=0.005, edgefade=0.) -> np.ndarray:
     T, F, A, B = [], [], [], []
     eps = 0.000001
     fade0 = fade
-    fade = fade - 2 * eps
-    zeros4 = np.zeros((4, ), dtype=float)
-    zeros1 = np.zeros((1, ), dtype=float)
+    fade = fade-2*eps
+    zeros4 = np.zeros((4,), dtype=float)
+    zeros1 = np.zeros((1,), dtype=float)
 
     if edgefade > 0:
         p = partials[0]
         p00 = p[0, 0]
-        t0 = p00 - edgefade
+        t0 = p00-edgefade
         if t0 > 0:
             T.append([t0])
             F.append([p[0, 1]])
@@ -110,10 +109,10 @@ def concat(partials: List[np.ndarray], fade=0.005, edgefade=0.) -> np.ndarray:
         A.append(p[:, 2])
         B.append(p[:, 4])
     else:
-        for i in range(len(partials) - 1):
+        for i in range(len(partials)-1):
             p0 = partials[i]
-            p1 = partials[i + 1]
-            if p1[0, 0] - p0[-1, 0] < fade0 * 2:
+            p1 = partials[i+1]
+            if p1[0, 0]-p0[-1, 0] < fade0*2:
                 raise ValueError("Partials overlap, can't concatenate")
             T.append(p0[:, 0])
             F.append(p0[:, 1])
@@ -124,11 +123,12 @@ def concat(partials: List[np.ndarray], fade=0.005, edgefade=0.) -> np.ndarray:
                 f1 = p1[0, 1]
                 t0 = p0[-1, 0]
                 t1 = p1[0, 0]
-                tmid = (t0 + t1) * 0.5
-                T.append([t0 + fade, tmid - eps, tmid + eps, t1 - fade])
+                tmid = (t0+t1)*0.5
+                T.append([t0+fade, tmid-eps, tmid+eps, t1-fade])
                 F.append([f0, f0, f1, f1])
                 A.append(zeros4)
                 B.append(zeros4)
+        p1 = partials[-1]
         T.append(p1[:, 0])
         F.append(p1[:, 1])
         A.append(p1[:, 2])
@@ -138,7 +138,7 @@ def concat(partials: List[np.ndarray], fade=0.005, edgefade=0.) -> np.ndarray:
     if p[-1, 2] > 0 and edgefade > 0:
         t1 = p[-1, 0]
         f1 = p[-1, 1]
-        T.append([t1 + edgefade])
+        T.append([t1+edgefade])
         F.append([f1])
         A.append(zeros1)
         B.append(zeros1)
@@ -151,8 +151,8 @@ def concat(partials: List[np.ndarray], fade=0.005, edgefade=0.) -> np.ndarray:
     return np.column_stack((times, freqs, amps, phases, bws))
 
 
-def _get_best_track(tracks: List[list], partial: np.ndarray, gap:float, 
-                    acceptabledist:float
+def _get_best_track(tracks: List[list], partial: np.ndarray, gap: float,
+                    acceptabledist: float
                     ) -> List[np.ndarray]:
     """
     Get the best track minimizing gap
@@ -169,9 +169,9 @@ def _get_best_track(tracks: List[list], partial: np.ndarray, gap:float,
     mindist = float("inf")
     best = None
     for track in tracks:
-        t1 = track[-1][-1, 0] + gap
+        t1 = track[-1][-1, 0]+gap
         if t1 < pt0:
-            dist = t1 - pt0
+            dist = t1-pt0
             if dist < acceptabledist:
                 return track
             if dist < mindist:
@@ -180,7 +180,7 @@ def _get_best_track(tracks: List[list], partial: np.ndarray, gap:float,
     return best
 
 
-def _join_track(partials: List[np.ndarray], fade:float) -> np.ndarray:
+def _join_track(partials: List[np.ndarray], fade: float) -> np.ndarray:
     """
     Join the (non simultaneous) partials into one partial
 
@@ -200,11 +200,11 @@ def _join_track(partials: List[np.ndarray], fade:float) -> np.ndarray:
 
 
 def pack(partials: List[np.ndarray],
-         maxtracks:int=0,
+         maxtracks: int = 0,
          gap=0.010,
          fade=-1.,
          acceptabledist=0.100,
-         minbps:int=2) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+         minbps: int = 2) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """
     Pack non-simultenous partials into longer partials with silences in between. 
 
@@ -227,12 +227,12 @@ def pack(partials: List[np.ndarray],
         gap: minimum gap between partials in a track. Should be longer than
             2 times the sampling interval, if the packed partials are later
             going to be resampled.
-
         fade: apply a fade to the partials before joining them.
             If not given, a default value is calculated
-
         acceptabledist: instead of searching for the best possible fit, pack 
             two partials together if they are near enough
+        minbps: the min. number of breakpoints for a partial to the packed. Partials
+            with less that this number of breakpoints are filtered out
 
     Returns:
         a tuple (tracks, unpacked partials)
@@ -244,9 +244,9 @@ def pack(partials: List[np.ndarray],
         gap = mingap
         logger.info(f"pack: gap value is too small. Using default: {gap}")
     if fade < 0:
-        fade = min(0.005, gap / 3.0)
+        fade = min(0.005, gap/3.0)
         logger.debug(f"pack: using fade={fade}")
-    clearance = gap + 2 * fade
+    clearance = gap+2*fade
 
     def _pack_partials(partials, tracks=None):
         tracks = tracks if tracks is not None else []
@@ -271,7 +271,7 @@ def pack(partials: List[np.ndarray],
     return joint_tracks, unpacked
 
 
-def partial_sample_regularly(p: np.ndarray, dt:float, t0=-1., t1=-1.) -> np.ndarray:
+def partial_sample_regularly(p: np.ndarray, dt: float, t0=-1., t1=-1.) -> np.ndarray:
     """
     Sample a partial `p` at regular time intervals
 
@@ -289,11 +289,11 @@ def partial_sample_regularly(p: np.ndarray, dt:float, t0=-1., t1=-1.) -> np.ndar
         t0 = p[0, 0]
     if t1 <= 0:
         t1 = p[-1, 0]
-    times = np.arange(t0, t1 + dt, t1)
+    times = np.arange(t0, t1+dt, t1)
     return partial_sample_at(p, times)
 
 
-def partial_sample_at(p: np.ndarray, times: U[np.ndarray, Lisŧ[float]]) -> np.ndarray:
+def partial_sample_at(p: np.ndarray, times: np.ndarray) -> np.ndarray:
     """
     Sample a partial `p` at given times
 
@@ -305,13 +305,18 @@ def partial_sample_at(p: np.ndarray, times: U[np.ndarray, Lisŧ[float]]) -> np.n
     Returns:
         a partial (2D-array with columns times, freqs, amps, phases, bws)
     """
-    times = np.asarray(times, dtype=float)
+    assert isinstance(times, np.ndarray)
+    t0 = p[0, 0]
+    t1 = p[-1, 0]
+    index0 = npx.searchsorted1(times, t0)
+    index1 = npx.searchsorted1(times, t1)-1
+    times = times[index0:index1]
     data = npx.table_interpol_linear(p, times)
     timescol = times.reshape((times.shape[0], 1))
     return np.hstack((timescol, data))
 
 
-def partial_at(p: np.ndarray, t: float, extend=False) -> np.ndarray:
+def partial_at(p: np.ndarray, t: float, extend=False) -> Opt[np.ndarray]:
     """
     Evaluates partial `p` at time `t`
 
@@ -323,7 +328,8 @@ def partial_at(p: np.ndarray, t: float, extend=False) -> np.ndarray:
             Otherwise, None is returned
 
     Returns:
-        the breakpoint at t (a np array of shape (4,) with columns (time, freq, amp, bw)
+        the breakpoint at t (a np array of shape (4,) with columns (time, freq, amp, bw).
+        Returns None if the array is not defined at the given time
     """
     if extend:
         bp = npx.table_interpol_linear(p, np.array([t], dtype=float))
@@ -333,11 +339,11 @@ def partial_at(p: np.ndarray, t: float, extend=False) -> np.ndarray:
             bp = npx.table_interpol_linear(p, np.array([t], dtype=float))
         else:
             return None
-    bp.shape = (4, )
+    bp.shape = (4,)
     return bp
 
 
-def _open_with_standard_app(path:str) -> None:
+def _open_with_standard_app(path: str) -> None:
     """
     Open path with the app defined to handle it by the user
     at the os level (xdg-open in linux, start in win, open in osx)
@@ -357,7 +363,7 @@ def _open_with_standard_app(path:str) -> None:
         raise RuntimeError(f"platform {platform} not supported")
 
 
-def partial_crop(p: np.ndarray, t0:float, t1:float) -> np.ndarray:
+def partial_crop(p: np.ndarray, t0: float, t1: float) -> np.ndarray:
     """
     Crop partial at times t0, t1
     
@@ -397,18 +403,18 @@ def partial_crop(p: np.ndarray, t0:float, t1:float) -> np.ndarray:
     return np.vstack(arrays)
 
 
-def partials_sample(sp: List[np.ndarray], dt=0.002, t0:float=-1, t1:float=-1, 
+def partials_sample(partials: List[np.ndarray], dt=0.002, t0: float = -1, t1: float = -1,
                     maxactive=0, interleave=True):
     """
     Samples the partials between times `t0` and `t1` with a sampling period `dt`
 
     Args:
-        sp: a list of 2D-arrays, each representing a partial
+        partials: a list of 2D-arrays, each representing a partial
         dt: sampling period
         t0: start time, or None to use the start time of the spectrum
         t1: end time, or None to use the end time of the spectrum
         maxactive: limit the number of active partials to this number. If the
-            number of active streams (partials with non-zero amplitude) if
+            number of active streams (partials with non-zero amplitude) is
             higher than `maxactive`, the softest partials will be zeroed.
             During resynthesis, zeroed partials are skipped.
             This strategy is followed to allow to pack all partials at the cost
@@ -431,8 +437,8 @@ def partials_sample(sp: List[np.ndarray], dt=0.002, t0:float=-1, t1:float=-1,
 
     ```python
 
-    [[f0, amp0, bw0, f1, amp1, bw1, …, fN, ampN, bwN],   # times[0]
-     [f0, amp0, bw0, f1, amp1, bw1, …, fN, ampN, bwN],   # times[1]
+    [[t0, f0, amp0, bw0, f1, amp1, bw1, …, fN, ampN, bwN],
+     [t1, f0, amp0, bw0, f1, amp1, bw1, …, fN, ampN, bwN],
      ...
     ]
     ```
@@ -454,15 +460,16 @@ def partials_sample(sp: List[np.ndarray], dt=0.002, t0:float=-1, t1:float=-1,
     !!! note
 
         phase information is not sampled
+
     """
     if t0 < 0:
-        t0 = min(p[0, 0] for p in sp)
+        t0 = min(p[0, 0] for p in partials)
     if t1 <= 0:
-        t1 = max(p[-1, 0] for p in sp)
-    times = np.arange(t0, t1 + dt, dt)
+        t1 = max(p[-1, 0] for p in partials)
+    times = np.arange(t0, t1+dt, dt)
     if not interleave:
         freqs, amps, bws = [], [], []
-        for p in sp:
+        for p in partials:
             out = npx.table_interpol_linear(p, times)
             freqs.append(out[:, 0])
             amps.append(out[:, 1])
@@ -474,8 +481,8 @@ def partials_sample(sp: List[np.ndarray], dt=0.002, t0:float=-1, t1:float=-1,
             _limit_matrix(amparray, maxactive)
         return freqarray, amparray, bwarray
     else:
-        cols = []
-        for p in sp:
+        cols = [times]
+        for p in partials:
             p_resampled = npx.table_interpol_linear(p, times)
             # Extract columns: freq, amp, bw (freq is now index 0, because
             # the resampled partial has no times column)
@@ -546,22 +553,22 @@ def partial_energy(partial: np.ndarray) -> float:
     lt.util.plot_partials(loudest)
     ```
     """
-    dur = partial[-1, 0] - partial[0, 0]
-    return meanamp(partial) * dur
+    dur = partial[-1, 0]-partial[0, 0]
+    return meanamp(partial)*dur
 
 
-def db2amp(x:float) -> float:
+def db2amp(x: float) -> float:
     """
     Convert amplitude in dB to linear amplitude
     """
-    return 10.0**(0.05 * x)
+    return 10.0**(0.05*x)
 
 
-def db2ampnp(x:np.ndarray) -> np.ndarray:
+def db2ampnp(x: np.ndarray) -> np.ndarray:
     """
     Convert amplitude in dB to linear amplitude for a numpy array
     """
-    return 10.0**(0.05 * x)
+    return 10.0**(0.05*x)
 
 
 def select(partials: List[np.ndarray], mindur=0., minamp=-120, maxfreq=24000,
@@ -611,7 +618,7 @@ def select(partials: List[np.ndarray], mindur=0., minamp=-120, maxfreq=24000,
         if checktime:
             if p[-1, 0] < t0 or (t1 > 0 and p[0, 0] > t1):
                 continue
-        if checkbps and (len(p) < minbps or (p[-1, 0] - p[0, 0]) < mindur):
+        if checkbps and (len(p) < minbps or (p[-1, 0]-p[0, 0]) < mindur):
             unselected.append(p)
             continue
         if checkfreq:
@@ -640,11 +647,11 @@ def filter(partials: List[np.ndarray], mindur=0., mindb=-120, maxfreq=2400,
         if checktime:
             if p[-1, 0] < t0 or (t1 > 0 and p[0, 0] > t1):
                 continue
-        if checkbps and (len(p) < minbps or (p[-1, 0] - p[0, 0]) < mindur):
+        if checkbps and (len(p) < minbps or (p[-1, 0]-p[0, 0]) < mindur):
             continue
         if checkfreq:
             f = _core.meancol(p, 1)
-            if not (minfreq <= f <= maxfreq):
+            if not (minfreq<=f<=maxfreq):
                 continue
         if mindb > -120:
             if meanamp(p) < amp:
@@ -652,7 +659,7 @@ def filter(partials: List[np.ndarray], mindur=0., mindb=-120, maxfreq=2400,
         yield p
 
 
-def loudest(partials: List[np.ndarray], N:int=0) -> List[np.ndarray]:
+def loudest(partials: List[np.ndarray], N: int = 0) -> List[np.ndarray]:
     """
     Get the loudest N partials. If N is not given, all partials
     are returned, sorted in declining energy
@@ -666,33 +673,35 @@ def loudest(partials: List[np.ndarray], N:int=0) -> List[np.ndarray]:
     return sorted_partials
 
 
-def matrix_save(m: np.ndarray, outfile: str, dt: float, t0=0., 
-                bits=32, header=True, metadata=True) -> None:
+def matrix_save(data: np.ndarray, outfile: str, bits=32, header=True, metadata=True
+                ) -> None:
     """
-    Save the raw data in m as a float32 soundfile. This is not a real
-    soundfile but it is used to transfer the data in binary form to be
-    read in another application. Supported formats are "wav", "aiff" and
-    "npy". The advantage of using a soundfile to transfer raw data is the
-    portability (no endianness problem) and the availability of fast
-    libraries for many applications.
+    Save the raw data mtx.
+
+    The data is saved either as a `.mtx` or as a `.npy` file.
+
+    !!! note: file format
+
+    The `mtx` is an ad-hoc format where a .wav format is used to store binary
+    data. This .wav file is not a real soundfile but it turns out that the .wav format
+    is very useful for saving binary data (it is endiannes independent,
+    it supports some limited metadata and is widely supported)
+
+    The `.npy` format is defined by numpy here:
+    <https://numpy.org/doc/stable/reference/generated/numpy.lib.format.html#module-numpy
+    .lib.format>
 
     Args:
-        m: a 2D-matrix as returned by `partials_sample`
+        data: a 2D-matrix as returned by `partials_sample`
         outfile: the path to the resulting output file. The format should be
             .wav or .npy
-        dt: the sampling period used to sample the partials.
-        t0: the start time of the sampled partials
         bits: 32 or 64. 32 bits should be enough
-        header: if True, a header is included with the format `[dataOffset, dt, numcols, numrows, t0]`
+        header: if True, a header is included with the format `[dataOffset, numcols,
+            numrows]`
         metadata: If True, metadata is included which duplicates the
             data of the header in string form.
 
-    Each row corresponds to a sample of all partials, the time of
-    each row can be determined by:
-
-        times = arange(t0, t0+dt*numrows, dt)
-
-    The data `m` is a 2D numpy array. It is written as a flat array after
+    The data `mt` is a 2D numpy array. It is written as a flat array after
     the header
 
     ### Example
@@ -704,26 +713,27 @@ def matrix_save(m: np.ndarray, outfile: str, dt: float, t0=0.,
         tracks = lt.pack(partials)
         dt = 64/44100
         m = lt.partials_sample(tracks, dt)
-        matrix_save(m, dt, "out.wav")
+        matrix_save(m, "out.wav")
     ```
     """
     fmt = os.path.splitext(outfile)[1]
-    if fmt == '.wav':
+    if fmt == '.mtx':
         f = _wavwriter(outfile, sr=44100, bits=bits)
-        numrows, numcols = m.shape
+        numrows, numcols = data.shape
         if metadata:
-            metastr = b"DataStart=%d, SamplingPeriod=%f, NumCols=%d, NumRows=%d, TimeStart=%f" % \
-                      (5 if header else 0, dt, numcols, numrows, t0)
+            metastr = b"HeaderLength=%d, NumCols=%d, NumRows=%d"%(2, numcols, numrows)
             f.comment = metastr
             f.software = "loristrck"
         if header:
-            header_array = np.array([5, dt, numcols, numrows, t0], dtype=float)
+            header_array = np.array([2, numcols, numrows], dtype=float)
             f.write(header_array)
-        mflat = m.ravel()
+        mflat = data.ravel()
         f.write(mflat)
         f.close()
     elif fmt == '.npy':
-        np.save
+        np.save(outfile, data, allow_pickle=False)
+    else:
+        raise ValueError(f"Format {fmt} not recognized")
 
 
 def _wavwriter(outfile, sr=44100, bits=32, channels=1):
@@ -744,7 +754,7 @@ def wavwrite(outfile, samples, sr=44100, bits=32):
     f.close()
 
 
-def partials_save_matrix(partials: List[np.ndarray], outfile:str, dt:float=None,
+def partials_save_matrix(partials: List[np.ndarray], outfile: str, dt: float = None,
                          gapfactor=3., maxtracks=0, maxactive=0
                          ) -> Tuple[List[np.ndarray], np.ndarray]:
     """
@@ -768,8 +778,8 @@ def partials_save_matrix(partials: List[np.ndarray], outfile:str, dt:float=None,
             over this stage, you can call estimate_sampling_interval yourself.
             At the cost of oversampling, a good value can be ksmps/sr, which results
             in 64/44100 = 0.0014 secs for typical values
-        outfile: path to save the sampled partials. The data is saved
-            as an uncompressed .wav soundfile.
+        outfile: path to save the sampled partials. Supported formats: `.mtx`, `.npy`
+            (See matrix_save for more information)
         gapfactor: partials are packed with a gap = dt * gapfactor.
             It should be at least 2. A gap is a minimal amount of silence
             between the partials to allow for a fade out and fade in
@@ -790,10 +800,9 @@ def partials_save_matrix(partials: List[np.ndarray], outfile:str, dt:float=None,
     if dt is None:
         dt = estimate_sampling_interval(partials)
     assert all(isinstance(p, np.ndarray) for p in partials)
-    tracks, rest = pack(partials, gap=dt * gapfactor, maxtracks=maxtracks)
+    tracks, rest = pack(partials, gap=dt*gapfactor, maxtracks=maxtracks)
     mtx = partials_sample(tracks, dt=dt, maxactive=maxactive)
-    t0 = min(p[0, 0] for p in partials)
-    matrix_save(mtx, outfile, dt=dt, t0=t0, bits=32)
+    matrix_save(mtx, outfile, bits=32)
     return tracks, mtx
 
 
@@ -825,39 +834,38 @@ def sndreadmono(path: str, chan: int = 0, contiguous=True
     return samples, sr
 
 
-def sndwrite(samples: np.ndarray, sr: int, path: str, encoding:str=None) -> None:
+def sndwrite(samples: np.ndarray, sr: int, path: str, encoding: str = None) -> None:
     """
     Write the samples to a soundfile
 
     Args:
-        samples (np.ndarray): the samples to write
-        sr (int): samplerate
-        path (str): the outfile to write the samples to (the extension will 
-            determine the format)
-        encoding (tuple[str, int]): the encoding of the samples. If None, a default 
-            is used, according to the extension of the outfile given. Otherwise, a 
-            tuple like `('float', 32)` or `('pcm', 24)` is expected. Not all encodings 
-            are supported by each format
+        samples: the samples to write
+        sr: samplerate
+        path: the outfile to write the samples to (the extension will determine the format)
+        encoding: the encoding of the samples. If None, a default is used, according to
+            the extension of the outfile given. Otherwise, a string 'floatXX' or 'pcmXX'
+            is expected, where XX represent the bits per sample (15, 24, 32, 64 for pcm,
+            32 or 64 for float). Not all encodings are supported by all formats.
     """
     if isinstance(encoding, str):
         encoding = encoding[:-2], int(encoding[-2:])
     elif encoding is None:
         ext = os.path.splitext(path)[1].lower()
         encoding = {
-            '.wav': ('float', 32),
-            '.aif': ('float', 32),
-            '.aiff': ('float', 32),
-            '.flac': ('pcm', 24)
+            '.wav':'float32',
+            '.aif':'float32',
+            '.aiff':'float32',
+            '.flac':'pcm24'
         }.get(ext)
         if encoding is None:
             raise ValueError(f"format {ext} not supported")
 
     subtype = {
-        ('float', 32): 'FLOAT',
-        ('float', 64): 'DOUBLE',
-        ('pcm', 16): 'PCM_16',
-        ('pcm', 24): 'PCM_24',
-        ('pcm', 32): 'PCM_32'
+        'float32':'FLOAT',
+        'float64':'DOUBLE',
+        'pcm16':'PCM_16',
+        'pcm24':'PCM_24',
+        'pcm32':'PCM_32',
     }.get(encoding)
 
     if subtype is None:
@@ -872,13 +880,9 @@ def sndwrite(samples: np.ndarray, sr: int, path: str, encoding:str=None) -> None
     f.close()
 
 
-def plot_partials(partials: List[np.ndarray],
-                  downsample: int = 1,
-                  cmap='inferno',
-                  exp=1.0,
-                  linewidth=1,
-                  ax=None,
-                  avg=True):
+def plot_partials(partials: List[np.ndarray], downsample: int = 1,
+                  cmap='inferno', exp=1.0, linewidth=1, ax=None, avg=True
+                  ):
     """
     Plot the partials using matplotlib
 
@@ -886,7 +890,13 @@ def plot_partials(partials: List[np.ndarray],
         partials: a list of numpy arrays, each representing a partial
         downsample: If > 1, only one every `downsample` breakpoints will be taken
             into account.
-        cmap: a string defining the colormap used (see https://matplotlib.org/users/colormaps.html)
+        cmap: a string defining the colormap used
+            (see <https://matplotlib.org/users/colormaps.html>)
+        exp: an exponential to apply to the amplitudes before plotting
+        linewidth: the line width of the plot
+        avg: if True, the colour of a segment depends on the average between the
+            amplitude at the start breakpoint and the end breakpoint of the segment
+            Otherwise only the amplitude of the start breakpoint is used
         ax: A matplotlib axes. If one is passed, plotting will be done to this
             axes. Otherwise a new axes is created
 
@@ -908,20 +918,20 @@ def _kaiser_shape(atten):
     """
     if atten < 0.:
         raise ValueError(
-            "Kaiser window shape must be computed from positive (> 0dB)"
-            " sidelobe attenuation. (received attenuation < 0)")
+                "Kaiser window shape must be computed from positive (> 0dB)"
+                " sidelobe attenuation. (received attenuation < 0)")
     if atten > 60.0:
-        alpha = 0.12438 * (atten + 6.3)
+        alpha = 0.12438*(atten+6.3)
     elif atten > 13.26:
-        alpha = (0.76609 * math.pow(
-            (atten - 13.26), 0.4) + 0.09834 * (atten - 13.26))
+        alpha = (0.76609*math.pow(
+                (atten-13.26), 0.4)+0.09834*(atten-13.26))
     else:
         # can't have less than 13dB.
         alpha = 0.0
     return alpha
 
 
-def kaiser_length(width:float, sr:int, atten:int) -> int:
+def kaiser_length(width: float, sr: int, atten: int) -> int:
     """
     Returns the length in samples of a Kaiser window from the desired main lobe width.
 
@@ -946,19 +956,19 @@ def kaiser_length(width:float, sr:int, atten:int) -> int:
         the length of the window, in samples
 
     """
-    norm_width = width / sr
+    norm_width = width/sr
     alpha = _kaiser_shape(atten)
     # the last 0.5 is cheap rounding. But I think I don't need cheap rounding
     # because the equation from Kaiser and Schafer has a +1 that appears to be
     # a cheap ceiling function.
     pi = math.pi
-    return int(1.0 + (2. * math.sqrt((pi * pi) + (alpha * alpha)) /
-                      (pi * norm_width)))
+    return int(1.0+(2.*math.sqrt((pi*pi)+(alpha*alpha))/
+                    (pi*norm_width)))
 
 
 def _partial_estimate_breakpoint_gap(partial, percentile=50):
     times = partial[:, 0]
-    diffs = times[1:] - times[:-1]
+    diffs = times[1:]-times[:-1]
     gap = np.percentile(diffs, percentile)
     return gap
 
@@ -991,6 +1001,14 @@ def estimate_sampling_interval(partials: List[np.ndarray],
     Args:
         partials: a list of partials
         maxpartials: if given, only consider this number of partials to calculate dt
+        percentile: ???
+        ksmps: samples per cycle used when rendering. This is used in the estimation
+            to prevent oversampling
+        sr: the sample rate used for playback, used together with ksmps to estimate
+            a useful sampling interval
+
+    Returns:
+        the most appropriate sampling interval for the data and the playback conditions
     """
     partial_percentile = percentile
     if maxpartials > 0:
@@ -998,7 +1016,7 @@ def estimate_sampling_interval(partials: List[np.ndarray],
     gap = _estimate_breakpoint_gap(partials,
                                    percentile=percentile,
                                    partial_percentile=partial_percentile)
-    kr = ksmps / sr
+    kr = ksmps/sr
     dt = max(gap, kr)
     return round(dt, 4)
 
@@ -1010,17 +1028,15 @@ def partial_timerange(partial: np.ndarray) -> Tuple[float, float]:
     return partial[0, 0], partial[-1, 0]
 
 
-def partials_stretch(partials: List[np.ndarray], factor:float, inplace=False
+def partials_stretch(partials: List[np.ndarray], factor: float, inplace=False
                      ) -> List[np.ndarray]:
     """
     Stretch the partials in time by a given constant factor
 
     Args:
         partials: a list of partials
-        factor: float
-            a factor to multiply all times by
-        inplace:
-            modify partials in place
+        factor: float. a factor to multiply all times by
+        inplace: modify partials in place
 
     Returns:
         the stretched partials
@@ -1042,10 +1058,10 @@ def i2r(interval: float) -> float:
     """
     Interval to ratio
     """
-    return 2**(interval / 12.)
+    return 2**(interval/12.)
 
 
-def partials_transpose(partials: List[np.ndarray], interval:float, inplace=False
+def partials_transpose(partials: List[np.ndarray], interval: float, inplace=False
                        ) -> List[np.ndarray]:
     """
     Transpose the partials by a given interval
@@ -1100,11 +1116,11 @@ def partials_between(partials: List[np.ndarray], t0=0., t1=0.) -> List[np.ndarra
 def _f2m(freq, A4=442):
     if freq < 9:
         return 0
-    return 12.0 * math.log(freq / A4, 2) + 69.0
+    return 12.0*math.log(freq/A4, 2)+69.0
 
 
 def _amp2db(amp):
-    return math.log10(amp) * 20
+    return math.log10(amp)*20
 
 
 _enharmonics = [
@@ -1115,36 +1131,36 @@ _notes3 = [
 ]
 
 
-def _m2n(midinote:float) -> str:
+def _m2n(midinote: float) -> str:
     i = int(midinote)
-    micro = midinote - i
-    octave = int(midinote / 12.0) - 1
-    ps = int(midinote % 12)
-    cents = int(micro * 100 + 0.5)
+    micro = midinote-i
+    octave = int(midinote/12.0)-1
+    ps = int(midinote%12)
+    cents = int(micro*100+0.5)
     if cents == 0:
-        return str(octave) + _notes3[ps]
+        return str(octave)+_notes3[ps]
     elif cents == 50:
         if ps in (1, 3, 6, 8, 10):
-            return str(octave) + _notes3[ps + 1] + '-'
-        return str(octave) + _notes3[ps] + '+'
+            return str(octave)+_notes3[ps+1]+'-'
+        return str(octave)+_notes3[ps]+'+'
     elif cents > 50:
-        cents = 100 - cents
+        cents = 100-cents
         ps += 1
         if ps > 11:
             octave += 1
         if cents > 9:
-            return "%d%s-%d" % (octave, _enharmonics[ps], cents)
+            return "%d%s-%d"%(octave, _enharmonics[ps], cents)
         else:
-            return "%d%s-0%d" % (octave, _enharmonics[ps], cents)
+            return "%d%s-0%d"%(octave, _enharmonics[ps], cents)
     else:
         if cents > 9:
-            return "%d%s+%d" % (octave, _notes3[ps], cents)
+            return "%d%s+%d"%(octave, _notes3[ps], cents)
         else:
-            return "%d%s+0%d" % (octave, _notes3[ps], cents)
+            return "%d%s+0%d"%(octave, _notes3[ps], cents)
 
 
 def partials_at(partials: List[np.ndarray], t: float, maxcount=0, mindb=-120,
-                minfreq=10, maxfreq=22000, listen=False):
+                minfreq=10, maxfreq=22000):
     """
     Return the breakpoints at time t which satisfy the given conditions
 
@@ -1152,28 +1168,23 @@ def partials_at(partials: List[np.ndarray], t: float, maxcount=0, mindb=-120,
         partials: the partials analyzed
         t: the time in seconds
         maxcount: the max. partials to detect, ordered by amplitude (0=all)
-        minamp: the min. amplitude a partial has to have at `t` in order to be counted
-        minfreq, maxfreq: the freq. range to considere
-        listen: if True, renders the extracted chord as a soundfile and opens
-            it in an external application, for listening
+        mindb: the min. amplitude a partial has to have at `t` in order to be counted
+        minfreq: only partials with a freq. higher than this
+        maxfreq: only partials with a freq. lower than this
 
     Returns:
         the breakpoints at time t which satisfy the given conditions
     """
     EPS = 0.000000001
-    present = partials_between(partials, t - EPS, t + EPS)
+    present = partials_between(partials, t-EPS, t+EPS)
     allbps = [partial_at(partial, t) for partial in present]
     minamp = db2amp(mindb)
     bps = [
-        bp for bp in allbps if minfreq <= bp[0] < maxfreq and bp[1] > minamp
+        bp for bp in allbps if minfreq<=bp[0] < maxfreq and bp[1] > minamp
     ]
     if maxcount == 0:
         return bps
-    bps.sort(key=lambda bp: bp[1], reverse=True)
-    if listen:
-        dur = listen if isinstance(listen, (int, float)) else 4
-        bpspartials = breakpoints_extend(bps, dur)
-        partials_render(bpspartials, open=True)
+    bps.sort(key=lambda bp:bp[1], reverse=True)
     return bps[:maxcount]
 
 
@@ -1226,20 +1237,20 @@ def breakpoints_to_chord(bps, A4=442) -> Tuple[str, float, float]:
     return out
 
 
-def partials_render(partials: List[np.ndarray], outfile:str, sr=44100,
-                    fadetime=-1., start=-1., end=-1., encoding:str=None,
-                    open=False):
+def partials_render(partials: List[np.ndarray], outfile: str, sr=44100,
+                    fadetime=-1., start=-1., end=-1., encoding: str = None
+                    ) -> None:
     """
     Render partials as a soundfile
 
     Args:
+        partials: the partials to render
         outfile: the outfile to write to. If not given, a temporary file is used
         sr: samplerate to render with
         fadetime: fade partials in/out when they don't end in a 0-amp bp
         start: start time of render (default: start time of spectrum)
         end: end time to render (default: end time of spectrum)
         encoding: if given, the encoding to use
-        open: open the rendered file in the default application (default to True if no outfile is given)
 
     Returns:
         the path to the oufile written
@@ -1250,12 +1261,9 @@ def partials_render(partials: List[np.ndarray], outfile:str, sr=44100,
                                start=start,
                                end=end)
     sndwrite(samples, sr=sr, path=outfile, encoding=encoding)
-    if open:
-        _open_with_standard_app(outfile)
-    return outfile
 
 
-def chord_to_partials(chord: List[Tuple[float, float]], dur:float, fade=0.1, 
+def chord_to_partials(chord: List[Tuple[float, float]], dur: float, fade=0.1,
                       startmargin=0., endmargin=0.
                       ) -> List[np.ndarray]:
     """
@@ -1273,7 +1281,7 @@ def chord_to_partials(chord: List[Tuple[float, float]], dur:float, fade=0.1,
     for row in chord:
         freq, ampnow = row
         assert isinstance(freq, (int, float))
-        assert isinstance(ampnow, (int, float)) and ampnow >= 0
+        assert isinstance(ampnow, (int, float)) and ampnow>=0
         mtx = [[0, freq, 0, 0, 0],
                [start, freq, 0, 0, 0],
                [start+fade, freq, ampnow, 0, 0],
@@ -1285,4 +1293,194 @@ def chord_to_partials(chord: List[Tuple[float, float]], dur:float, fade=0.1,
         partial = np.array(mtx, dtype=float)
         partials.append(partial)
     return partials
+
+
+def _get_frame_times(partials: List[np.ndarray]) -> np.ndarray:
+    allbps = []
+    for i, partial in enumerate(partials):
+        partialidx = np.ones(shape=(len(partial),), dtype=float)*i
+        bps = np.column_stack((partial[:,0], partialidx))
+        allbps.append(bps)
+    bparray = np.row_stack(allbps)
+    bparray = bparray[bparray[:, 0].argsort()]
+    seen = set()
+    frametimes = [bparray[0, 0]]
+    for i in range(len(bparray)):
+        row = bparray[i]
+        idx = int(row[1])
+        if idx not in seen:
+            seen.add(idx)
+        else:
+            frametimes.append(row[0])
+            seen.clear()
+            seen.add(idx)
+    return np.array(frametimes, dtype=float)
+
+
+def _write_sdif_1trc(partials: List[np.ndarray], outfile: str, 
+                     labels:U[List[int], np.ndarray]=None, fadetime=0.
+                     ) -> None:
+    if labels:
+        logger.warn("labels are not supported (at the moment) when writing to 1TRC sdif")
+    import pysdif
+    sdif = pysdif.SdifFile(outfile, "w")
+    sdif.add_NVT({'creator': 'pysdif3'})
+    #sdif.add_matrix_type("1TRC", "Index, Frequency, Amplitude, Phase")
+    #sdif.add_frame_type("1TRC", ["1TRC SinusoidalTracks"])
     
+    frametimes = _get_frame_times(partials)
+    partials = [partial_sample_at(p, frametimes) for p in partials]
+
+    allbps = []
+    for i, partial in enumerate(partials):
+        partialidx = np.ones(shape=(len(partial),), dtype=float)*i
+        bps = np.column_stack((partial, partialidx))
+        allbps.append(bps)
+    bparray = np.row_stack(allbps)
+    bparray = bparray[bparray[:, 0].argsort()]
+    seen = set()
+    startidx = 0
+    for i in range(len(bparray)):
+        row = bparray[i]
+        #       t f a p b i
+        # 1trc: i f a p 
+        idx = int(row[5])
+        if idx not in seen:
+            seen.add(idx)
+        else:
+            data = bparray[startidx:i]
+            t0 = data[0, 0]
+            frame = data[:, (5, 1, 2, 3)]
+            if not frame.flags.c_contiguous:
+                frame = np.ascontiguousarray(frame)
+            sdif.new_frame_one_matrix("1TRC", t0, "1TRC", frame)
+            startidx = i
+            seen.clear()
+            seen.add(idx)
+
+
+def partial_fade(partial: np.ndarray, fadein=0., fadeout: float=0.
+                 ) -> np.ndarray:
+    """
+    Apply a fadein / fadeout to this partial so that the first and last
+    breakpoints have an amplitude = 0
+
+    This is only applied if the partial starts or ends in non-zero amplitude
+
+    Args:
+        partial: the partial to fade
+        fadein: the fadein time. If 0 and the first breakpoint has a non-zero
+            amplitude, zero the first amplitude in the partial
+        fadeout: the fadeout time. If 0 and the last breakpoint has a non-zero
+            aplitude, zero the last amplitude in the partial.
+
+    Returns:
+        the faded partial
+    """
+    if fadein == 0 and fadeout == 0:
+        # in place
+        partial[0, 0] = 0
+        partial[-1, 0] = 0
+        return partial
+    partial2 = np.zeros((len(partial+2, 5)))
+    partial2[1:-1] = partial
+    t0 = max(0, partial[0, 0] - fadein)
+    partial2[0] = partial[0]
+    partial2[0, 0] = t0
+    partial2[0, 2] = 0
+    partial2[-1] = partial[-1]
+    t1 = partial[-1, 0] + fadeout
+    partial2[-1, 0] = t1
+    partial2[-1, 2] = 0
+    return partial
+
+
+def _write_sdif_rbep(partials: List[np.ndarray], outfile: str, 
+                     labels:U[List[int], np.ndarray]=None
+                     ) -> None:
+    """
+    Args:
+        partials: the partials to write
+        outfile: the path of the sdif file to generate
+        labels: if given, a list of integers with the same size as the partials, 
+            one label per partial
+    """
+    import pysdif
+    sdif = pysdif.SdifFile(outfile, "w")
+    sdif.add_NVT({'creator': 'pysdif3'})
+    sdif.add_matrix_type("RBEP",
+                         "Index, Frequency, Amplitude, Phase, Bandwidth, Offset")
+    if labels:
+        sdif.add_matrix_type("RBEL", "Index, Label")
+
+    sdif.add_frame_type("RBEP", ["RBEP ReassignedBandEnhancedPartials"])
+    if labels:
+        sdif.add_frame_type("RBEL", ["RBEL PartialLabels"])
+        if isinstance(labels, list):
+            assert len(labels) == len(partials)
+            labelframe = np.asarray(labels, dtype=float)
+        elif isinstance(labels, np.ndarray):
+            assert len(labels.shape) == 1 and labels.shape[0] == len(partials)
+            labelframe = labels
+        else:
+            raise TypeError(f"Expected a list of ints or a numpy array, got {type(labels)}")
+        sdif.new_frame_one_matrix("RBEL", 0, "RBEL", labelframe)
+
+    allbps = []
+    for i, partial in enumerate(partials):
+        partialidx = np.ones(shape=(len(partial),), dtype=float)*i
+        bps = np.column_stack((partial, partialidx))
+        allbps.append(bps)
+    bparray = np.row_stack(allbps)
+    bparray = bparray[bparray[:, 0].argsort()]
+    seen = set()
+    startidx = 0
+    for i in range(len(bparray)):
+        # print(i, len(bparray))
+        row = bparray[i]
+        #       t f a p b i
+        # rbep: i f a p b offset
+        idx = int(row[5])
+        if idx not in seen:
+            seen.add(idx)
+        else:
+            data = bparray[startidx:i]
+            times = data[:, 0]
+            t0 = times[0]            
+            offsets = times - t0
+            rbepframe = data.copy()
+            rbepframe[:,0] = data[:,5]
+            rbepframe[:,5] = offsets
+            # rbepframe = np.column_stack((data[:, (5, 1, 2, 3, 4)], offsets))
+            if not rbepframe.flags.c_contiguous:
+                rbepframe = np.ascontiguousarray(rbepframe)
+            sdif.new_frame_one_matrix("RBEP", t0, "RBEP", rbepframe)
+            startidx = i
+            seen.clear()
+            seen.add(idx)
+
+
+def write_sdif(partials: List[np.ndarray], outfile: str, labels=None, fmt="RBEP", fadetime=0.) -> None:
+    """
+    Write a list of partials as SDIF.  
+    
+    !!! note
+
+        The 1TRC format forces resampling, since all breakpoints within a 
+        1TRC frame need to share the same timestamp. In the RBEP format
+        a breakpoint has a time offset to the frame time stamp
+    
+    Args:
+        partials: a seq. of 2D arrays with columns [time freq amp phase bw]
+        outfile: the path of the sdif file
+        labels: a seq. of integer labels, or None to skip saving labels
+        fmt: one of "RBEP" / "1TRC"
+       
+    """
+    if fmt == "RBEP":
+        _write_sdif_rbep(partials, outfile, labels=labels)
+    elif fmt == "1TRC":
+        _write_sdif_1trc(partials, outfile, labels=labels)
+        # _core._write_sdif(partials, outfile, labels=labels, rbep=rbep, fadetime=fadetime)
+    else:
+        raise ValueError("Formats supported: RBEP, 1TRC")

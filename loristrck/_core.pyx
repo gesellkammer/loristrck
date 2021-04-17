@@ -8,13 +8,14 @@ from libcpp.vector cimport vector
 cimport lorisdefs as loris
 cimport cython
 from cython.operator cimport dereference as deref, preincrement as inc
-import numpy as _np
+import numpy as np
 cimport numpy as _np
 from numpy.math cimport INFINITY
 from libc.math cimport ceil, sqrt, pi, pow
 import logging
 import sys
 import os
+
 
 ctypedef _np.float64_t SAMPLE_t
 
@@ -171,7 +172,7 @@ cdef list PartialList_toarray(loris.PartialList* partials):
 
 cdef _np.ndarray Partial_toarray(loris.Partial* p):
     cdef int numbps = p.numBreakpoints()
-    cdef _np.ndarray [SAMPLE_t, ndim=2] arr = _np.empty((numbps, 5), dtype='float64')
+    cdef _np.ndarray [SAMPLE_t, ndim=2] arr = np.empty((numbps, 5), dtype='float64')
     cdef double *data = <double *>arr.data
     cdef loris.Partial_Iterator it  = p.begin()
     cdef loris.Partial_Iterator end = p.end()
@@ -331,7 +332,7 @@ cpdef PartialListW newPartialList(partials, labels=None, double fadetime=0):
     return self
 
 
-def write_sdif(partials, outfile, labels=None, rbep=True, double fadetime=0):
+def _write_sdif(partials, outfile, labels=None, rbep=True, double fadetime=0):
     """
     Write a list of partials in the sdif 
     
@@ -386,6 +387,7 @@ cdef void PartialList_setlabels(loris.PartialList *partial_list, labels):
         inc(p_it)
         if p_it == p_end:
             break
+
 
 cdef void PartialList_dump(loris.PartialList *plist):
     cdef loris.PartialListIterator p_it = plist.begin()
@@ -457,7 +459,7 @@ def read_aiff(path):
     if channels != 1:
         raise ValueError("Can only read mono files")
     cdef int numFrames = aiff.numFrames()
-    mono = _np.empty((numFrames,), dtype='float64')
+    mono = np.empty((numFrames,), dtype='float64')
     it = samples.begin()
     cdef int i = 0
     while i < numFrames:
@@ -559,7 +561,7 @@ def synthesize(partials, int samplerate, double fadetime=-1, double start=-1, do
     # cdef size_t synth_idx1 = int(synth_t1*samplerate) + 1
     cdef size_t startidx = int(start*samplerate)
     cdef size_t endidx = int(end*samplerate)
-    cdef double[::1] buf = _np.zeros((endidx-startidx,), dtype=float)
+    cdef double[::1] buf = np.zeros((endidx-startidx,), dtype=float)
     cdef int j = 0
     if numsynthesized > 0:
         for i in range(startidx, endidx):
@@ -570,7 +572,7 @@ def synthesize(partials, int samplerate, double fadetime=-1, double start=-1, do
     if len(errors) > 0:
         logger.error("Errors where found durint synthesis: " + "\n".join(errors))
     del synthesizer
-    return _np.asarray(buf)
+    return np.asarray(buf)
     
 
 cdef object PartialList_estimatef0(loris.PartialList *plist, 
@@ -603,8 +605,8 @@ cdef tuple PartialList_estimatef0_with_confidence(loris.PartialList *plist,
     cdef long numelements = arange_numelements(t0, t1, interval)
     cdef double t
     cdef double[2] data
-    cdef double[:] freqs = _np.zeros((numelements,), dtype='float64')
-    cdef double[:] confs = _np.zeros((numelements,), dtype='float64')
+    cdef double[:] freqs = np.zeros((numelements,), dtype='float64')
+    cdef double[:] confs = np.zeros((numelements,), dtype='float64')
     data[0] = 0
     data[1] = 0
     while i < numelements:
@@ -668,13 +670,13 @@ cdef _np.ndarray LinearEnvelope_toarray(loris.LinearEnvelope* env, double x0, do
     cdef long i = 0
     cdef long numelements = arange_numelements(x0, x1, interval)
     # cdef _np.ndarray[double, ndim=1] out = _np.zeros((numelements,), dtype='float64')
-    cdef double[::1] out = _np.empty((numelements,), dtype='float64')
+    cdef double[::1] out = np.empty((numelements,), dtype='float64')
     while i < numelements:
         x = x0 + interval*i
         y = env.valueAt(x)
         out[i] = y
         i += 1
-    return _np.asarray(out)
+    return np.asarray(out)
 
 
 def meancol(double[:,:] X, int col):
@@ -704,3 +706,39 @@ def meancolw(double[:, :] X, int col, int colw):
         accum += x*w
         weightsum += w
     return accum / weightsum
+
+
+cdef inline _np.ndarray EMPTY2D(int numrows, int numcols): 
+    cdef _np.npy_intp *dims = [numrows, numcols]
+    return _np.PyArray_EMPTY(2, dims, _np.NPY_DOUBLE, 0)
+
+
+def _make_rbep_frame(double[:, :] bparray, int startidx, int endidx, double t0):
+    """
+    takes the columns between startidx and endidx (not inclusive) and fills 
+    an array with the form
+                          0     1    2   3     4  5 
+    Original Columns:     time  freq amp phase bw index
+    rbep frame:           index freq amp phase bw timeoffset
+    """
+    cdef: 
+        int numrows
+        int numcols
+        int i
+        int j
+
+    numrows = bparray.shape[0]
+    numcols = bparray.shape[1]
+
+    cdef double[:,:] out = EMPTY2D(numrows, numcols)
+
+    for i in range(endidx - startidx):
+        j = startidx + i
+        out[i, 0] = bparray[j, 5]
+        out[i, 1] = bparray[j, 1]
+        out[i, 2] = bparray[j, 2]
+        out[i, 3] = bparray[j, 3]
+        out[i, 4] = bparray[j, 4]
+        out[i, 5] = bparray[j, 0] - t0
+
+    return np.asarray(out)
