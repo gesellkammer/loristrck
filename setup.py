@@ -3,7 +3,7 @@ import sys
 import glob
 from setuptools import setup, Extension
 
-VERSION = '1.2.1'
+VERSION = '1.2.2'
 
 class get_numpy_include(str):
     def __str__(self):
