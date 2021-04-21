@@ -1,11 +1,3 @@
-'''
-LORISTRCK: a library for sound analysis based on the partial-tracking library Loris
-
-The unerlying c++ library is included as part of the project --there is no need
-to install it independently.
-
-'''
-
 import os
 import sys
 import glob
@@ -142,5 +134,5 @@ setup(
     platforms=['Linux', 'Mac OS-X', 'Windows'],
     version=VERSION,
     description="A wrapper around the partial-tracking library Loris",
-    long_description=__doc__            
+    long_description=open("README.rst").read()            
 )
