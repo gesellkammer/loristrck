@@ -48,7 +48,7 @@ elif sys.platform == 'linux2':
 # Windows
 ######################################
 elif sys.platform == 'win32':
-    for folder in ('/src/fftw', '/lib/fftw'):
+    for folder in ('/src/fftw', '/lib/fftw', 'fftw'):
         append_if_exists(include_dirs, folder)
         append_if_exists(library_dirs, folder)
     compile_args.append("-march-i686")
