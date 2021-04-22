@@ -1,0 +1,19 @@
+This package contains a demonstration of sound morphing using Python and
+the Loris library. To run this demo, you must have Python in your path,
+and the Loris module in your PYTHONPATH.
+
+	make demo
+	
+runs the demo, or else simply run the demo script in the Python
+interpreter
+
+	python morphdemo.py
+	
+
+Loris is an Open Source C++ class library implementing analysis,
+manipulation, and synthesis of digitized sounds using the Reassigned
+Bandwidth-Enhanced Additive Sound Model, developed by Kelly Fitz and
+Lippold Haken at the CERL Sound Group. For more information about Loris
+and the Reassigned Bandwidth-Enhanced Additive Sound Model, please visit
+
+	http://www.cerlsoundgroup.org/Loris/

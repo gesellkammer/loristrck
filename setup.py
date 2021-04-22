@@ -22,8 +22,8 @@ include_dirs = [
 
 library_dirs = []
 libs = ['m', 'fftw3']
-compile_args = ['-DMERSENNE_TWISTER', '-DHAVE_FFTW3_H', 
-                '-g', '-std=c++11']
+compile_args = ['-DMERSENNE_TWISTER', 
+                '-DHAVE_FFTW3_H']
 
 
 def append_if_exists(seq, folder):
@@ -42,8 +42,14 @@ if sys.platform == 'darwin':
     # Macports support
     append_if_exists(include_dirs, '/opt/local/include')
     append_if_exists(library_dirs, '/opt/local/lib')
+    compile_args.append("-g")
+    compile_args.append("-std=c++11")
+        
 elif sys.platform == 'linux2':
     os.environ['CC'] = "ccache gcc"
+    compile_args.append("-g")
+    compile_args.append("-std=c++11")
+        
 ######################################
 # Windows
 ######################################
@@ -52,6 +58,9 @@ elif sys.platform == 'win32':
         append_if_exists(include_dirs, folder)
         append_if_exists(library_dirs, folder)
     compile_args.append("-march-i686")
+    compile_args.append("-DHAVE_CONFIG_H")
+    compile_args.append("/std:c++14")
+        
     print("""
 NB: make sure that the FFTW dlls are in the windows PATH")
 If FFTW is not found during build, go to http://www.fftw.org/install/windows.html
@@ -72,6 +81,7 @@ sources = []
 # -----------------------------------------------------------------------------
 loris_base = os.path.join('src', 'loris', 'src')
 loris_sources = glob.glob(os.path.join(loris_base, '*.C'))
+loris_sources = glob.glob(os.path.join(loris_base, '*.cpp'))
 loris_headers = glob.glob(os.path.join(loris_base, '*.h'))
 loris_exclude = []
 loris_exclude += [os.path.join(loris_base, filename) for filename in (
