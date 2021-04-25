@@ -12,13 +12,16 @@ import zipfile
 
 if sys.platform != "win32":
     print("This script is only needed in windows")
-    sys.exit(0)
+    # sys.exit(0)
 
 
 root = Path(__file__).parent.parent
+print("Root: ", root)
 loris_base = root / "src" / "loris"
+print("Loris base: ", loris_base)
 loris_win = root / "src" / "loriswin"
 tmp_dir = root / "tmp"
+print("tmp dir: ", tmp_dir)
 
 
 def python_arch() -> int:
@@ -31,8 +34,10 @@ arch = python_arch()
 
 
 def create_cpp_tree(dest):
+    if os.path.exists(dest):
+        shutil.rmtree(dest)
     shutil.copytree(loris_base, dest, dirs_exist_ok=True)
-    cfiles = glob.glob(os.path.join(loris_base, 'src', '*.C'))
+    cfiles = glob.glob(os.path.join(dest, 'src', '*.C'))
     for cfile in cfiles:
         os.rename(cfile, os.path.splitext(cfile)[0] + ".cpp")
 
