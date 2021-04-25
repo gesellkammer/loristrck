@@ -42,7 +42,7 @@ def python_arch() -> int:
 
 
 if sys.platform == 'darwin':
-    libs = ["m", "fftw"]
+    libs = ["m", "fftw3"]
     # On some systems, these are not in the path
     include_dirs.append('/usr/local/include')
     library_dirs.append('/usr/local/lib')
