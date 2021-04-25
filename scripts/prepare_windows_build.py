@@ -76,14 +76,16 @@ def zip_extract(zfile, outfolder):
 def generate_lib_files(fftw_folder: Path, arch=32):
     if sys.platform != "win32":
         raise RuntimeError("This operation is only valid in windows")
-
-    def_files = fftw_folder.glob("libfftw3*.def")
+    cwd = os.getcwd()
+    os.chdir(fftw_folder)
+    def_files = Path(".").glob("libfftw3*.def")
     libexe = shutil.which("lib.exe")
     if libexe is None:
         raise RuntimeError("lib.exe should be in the path")
     machine = "x86" if arch == 32 else "x64"
     for def_file in def_files:
         os.system(f"lib.exe /machine:{machine} /def:{def_file}")
+    os.chdir(cwd)
 
 
 create_cpp_tree(loris_win)
