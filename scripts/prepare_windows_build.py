@@ -89,6 +89,8 @@ def generate_lib_files(fftw_folder: Path, arch=32):
 
 
 for d in ["./build",  "./dist", "./*egg-info"]:
+    if not os.path.exists(d):
+        continue
     if os.path.isdir(d):
         print(f">> Removing dir {d}")
         shutil.rmtree(d)
