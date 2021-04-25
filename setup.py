@@ -15,9 +15,7 @@ class get_numpy_include(str):
 # -----------------------------------------------------------------------------
 
 include_dirs = [
-    'loristrck',
-    'src/loristrck',
-    'src/loris',
+    'loristrck'
 ]
 
 library_dirs = []
@@ -42,7 +40,7 @@ def python_arch() -> int:
 
 if sys.platform == 'darwin':
     libs = ["m", "fftw3"]
-    # On some systems, these are not in the path
+    include_dirs.append('src/loris')
     include_dirs.append('/usr/local/include')
     library_dirs.append('/usr/local/lib')
     # Macports support
@@ -50,20 +48,26 @@ if sys.platform == 'darwin':
     append_if_exists(library_dirs, '/opt/local/lib')
     compile_args.append("-g")
     compile_args.append("-std=c++11")
-        
+    loris_base = os.path.join('src', 'loris', 'src')
+                    
 elif sys.platform == 'linux2':
     libs = ["m", "fftw"]
         
     os.environ['CC'] = "ccache gcc"
     compile_args.append("-g")
     compile_args.append("-std=c++11")
-        
+    include_dirs.append('src/loris')
+    loris_base = os.path.join('src', 'loris', 'src')
+    
 ######################################
 # Windows
 ######################################
 elif sys.platform == 'win32':
     libs = ["libfftw3-3"]
-    possible_dirs = ['/src/fftw', '/lib/fftw'] 
+    assert os.path.exists('src/loriswin')
+    include_dis.append('src/loriswin')
+    possible_dirs = ['/src/fftw', '/lib/fftw']
+    loris_base = os.path.join('src', 'loriswin', 'src')
     if python_arch() == 32:
         possible_dirs.append("tmp/fftw32")
     else:
@@ -78,12 +82,13 @@ elif sys.platform == 'win32':
         "-D_USE_MATH_DEFINES",
     ]
 
+assert os.path.exists(loris_base)
+
 sources = []
 
 # -----------------------------------------------------------------------------
 # Loris
 # -----------------------------------------------------------------------------
-loris_base = os.path.join('src', 'loris', 'src')
 loris_sources  = glob.glob(os.path.join(loris_base, '*.C'))
 loris_sources += glob.glob(os.path.join(loris_base, '*.cpp'))
 loris_headers = glob.glob(os.path.join(loris_base, '*.h'))
