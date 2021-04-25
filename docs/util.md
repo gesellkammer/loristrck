@@ -366,7 +366,7 @@ def filter(partials: list[np.ndarray], mindur: float = 0.0, mindb: int = -120,
 ## sndreadmono
 
 
-Read a sound file as mono. If the soundfile is multichannel,
+Read a sound file as mono.
 
 
 ```python
@@ -377,7 +377,7 @@ def sndreadmono(path: str, chan: int = 0, contiguous: bool = True
 ```
 
 
-the indicated channel `chan` is returned.
+If the soundfile is multichannel, the indicated channel `chan` is returned.
 
 
 

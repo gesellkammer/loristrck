@@ -19,6 +19,7 @@ def main(destfolder: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--docs", default=".")
+    parser.add_argument("--destfolder", default="docs", help="Destination forlder for documentation")
     args = parser.parse_args()
-    main(args.docs)
+    assert os.path.exists(args.destfolder)
+    main(args.destfolder)

@@ -813,8 +813,9 @@ def _numchannels(samples: np.ndarray) -> int:
 def sndreadmono(path: str, chan: int = 0, contiguous=True
                 ) -> Tuple[np.ndarray, int]:
     """
-    Read a sound file as mono. If the soundfile is multichannel,
-    the indicated channel `chan` is returned.
+    Read a sound file as mono. 
+
+    If the soundfile is multichannel, the indicated channel `chan` is returned.
 
     Args:
         path: The path to the soundfile
