@@ -39,6 +39,7 @@ jobs:
         # uses: ilammy/msvc-dev-cmd@v1         
         if: runner.os == 'windows'
         run: |
+            dir
             choco install libsndfile
             python scripts/prepare_windows_build.py
             dir
