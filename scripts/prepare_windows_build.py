@@ -65,8 +65,10 @@ def download_fftw(arch=32):
 
 
 def zip_extract(zfile, outfolder):
+    outfolder = os.path.abspath(outfolder)
     print(f"Extracting {zfile} to {outfolder}")
-    os.makedirs(outfolder, exist_ok=True)
+    if os.path.exists(outfolder):
+        shutil.rmtree(outfolder)
     with zipfile.ZipFile(zfile, 'r') as z:
         z.extractall(outfolder)
 
