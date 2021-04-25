@@ -42,7 +42,7 @@ jobs:
             python scripts/prepare_windows_build.py
             
       - name: Install cibuildwheel
-        run: python -m pip install cibuildwheel==1.10.0 twine virtualenv # numpy cython
+        run: python -m pip install cibuildwheel==1.10.0 twine virtualenv numpy # cython
 
       - name: Build wheels
         run: |

@@ -132,7 +132,9 @@ setup(
     ext_modules = [
         Extension(
             'loristrck._core',
-            sources=sources + ['loristrck/_core.pyx'],
+            # sources=sources + ['loristrck/_core.pyx'],
+            sources=sources + ['loristrck/_core.cpp'],
+                        
             depends=loris_headers,
             include_dirs=include_dirs + [get_numpy_include()],
             libraries=libs,
@@ -146,11 +148,11 @@ setup(
              'bin/loristrck_chord'],
     setup_requires=[
         'numpy>=1.8',
-        'cython>=0.25'
+        # 'cython>=0.25'
     ],
     install_requires=[
         'numpy>=1.8',
-        'cython>=0.25',
+        # 'cython>=0.25',
         'numpyx',
         'soundfile',
         'sounddevice',
