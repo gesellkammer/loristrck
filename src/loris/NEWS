@@ -3,8 +3,7 @@ synthesis, and morphing, developed by Kelly Fitz and Lippold Haken
 at the CERL Sound Group. Loris includes a C++ class library, a
 Python module, a C-linkable interface, and documentation.
 
-Loris 1.9 includes minor bug fixes and API enhancements. 
-
+Loris 1.8 includes minor bug fixes and API enhancements. 
 A detailed list of major changes is given in the change 
 history, below. 
 
@@ -18,28 +17,10 @@ Please send bug reports to loris@cerlsoundgroup.org
 
 Loris is free software. Please see the file COPYING for details.
 
-Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken.
+Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken.
 
 
 History of visible changes, organized by release number:
-
--------------------------------------------------------
-changes since 1.8 release:
-
-- Added configuration option to build (or not build) the command
-line utilities.
-
-- Converted PartialList from a typedef into a class (some changes 
-to the C++ interface, no changes to procedural or Python interfaces).
-
-- In the SWIG (Python) interface, added many of the PartialList 
-mutation functions to the PartialList class itself. 
-
-- Updated Python module test code and SWIG (Python) interface to be
-compatible with Python 3 (as well as Python 2.6/7). Earlier versions
-of Python are no longer supported. 
-
-- Removed support for Csound4.
 
 -------------------------------------------------------
 changes since 1.7 release:
@@ -848,7 +829,7 @@ for the Python module is included, and posted to SourceForge
 -------------------------------------------------------
 Copying information:
 
-Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
 <loris@cerlsoundgroup.org>
 
 

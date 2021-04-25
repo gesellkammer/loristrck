@@ -5,7 +5,7 @@
  * manipulation, and synthesis of digitized sounds using the Reassigned 
  * Bandwidth-Enhanced Additive Sound Model.
  *
- * Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+ * Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1084,8 +1084,6 @@ private:
 
 //	-- comparitors --
 
-typedef std::binary_function< const Partial, const Partial, bool > PartialComparitor;
-
 // ---------------------------------------------------------------------------
 //	compareLabelLess
 //	
@@ -1093,7 +1091,8 @@ typedef std::binary_function< const Partial, const Partial, bool > PartialCompar
 //! argument has a label whose 32-bit integer representation is less than
 //! that of the second Partial argument's label, and false otherwise.
 //
-class compareLabelLess : public PartialComparitor
+class compareLabelLess : 
+	public std::binary_function< const Partial, const Partial, bool >
 {
 public:
    //! Compare two Partials, return true if its first Partial

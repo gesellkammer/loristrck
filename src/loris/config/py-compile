@@ -1,9 +1,10 @@
 #!/bin/sh
 # py-compile - Compile a Python program
 
-scriptversion=2011-06-08.12; # UTC
+scriptversion=2009-04-28.21; # UTC
 
-# Copyright (C) 2000-2014 Free Software Foundation, Inc.
+# Copyright (C) 2000, 2001, 2003, 2004, 2005, 2008, 2009 Free Software
+# Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,36 +32,28 @@ if [ -z "$PYTHON" ]; then
   PYTHON=python
 fi
 
-me=py-compile
-
-usage_error ()
-{
-  echo "$me: $*" >&2
-  echo "Try '$me --help' for more information." >&2
-  exit 1
-}
-
 basedir=
 destdir=
+files=
 while test $# -ne 0; do
   case "$1" in
     --basedir)
-      if test $# -lt 2; then
-        usage_error "option '--basedir' requires an argument"
-      else
-        basedir=$2
+      basedir=$2
+      if test -z "$basedir"; then
+        echo "$0: Missing argument to --basedir." 1>&2
+        exit 1
       fi
       shift
       ;;
     --destdir)
-      if test $# -lt 2; then
-        usage_error "option '--destdir' requires an argument"
-      else
-        destdir=$2
+      destdir=$2
+      if test -z "$destdir"; then
+        echo "$0: Missing argument to --destdir." 1>&2
+        exit 1
       fi
       shift
       ;;
-    -h|--help)
+    -h|--h*)
       cat <<\EOF
 Usage: py-compile [--help] [--version] [--basedir DIR] [--destdir DIR] FILES..."
 
@@ -76,27 +69,20 @@ Report bugs to <bug-automake@gnu.org>.
 EOF
       exit $?
       ;;
-    -v|--version)
-      echo "$me $scriptversion"
+    -v|--v*)
+      echo "py-compile $scriptversion"
       exit $?
       ;;
-    --)
-      shift
-      break
-      ;;
-    -*)
-      usage_error "unrecognized option '$1'"
-      ;;
     *)
-      break
+      files="$files $1"
       ;;
   esac
   shift
 done
 
-files=$*
 if test -z "$files"; then
-    usage_error "no files given"
+    echo "$0: No files given.  Try \`$0 --help' for more information." 1>&2
+    exit 1
 fi
 
 # if basedir was given, then it should be prepended to filenames before
@@ -116,7 +102,7 @@ else
 fi
 
 $PYTHON -c "
-import sys, os, py_compile, imp
+import sys, os, py_compile
 
 files = '''$files'''
 
@@ -129,19 +115,12 @@ for file in files.split():
 	    continue
     sys.stdout.write(file)
     sys.stdout.flush()
-    if hasattr(imp, 'get_tag'):
-        py_compile.compile(filepath, imp.cache_from_source(filepath), path)
-    else:
-        py_compile.compile(filepath, filepath + 'c', path)
+    py_compile.compile(filepath, filepath + 'c', path)
 sys.stdout.write('\n')" || exit $?
 
 # this will fail for python < 1.5, but that doesn't matter ...
 $PYTHON -O -c "
-import sys, os, py_compile, imp
-
-# pypy does not use .pyo optimization
-if hasattr(sys, 'pypy_translation_info'):
-    sys.exit(0)
+import sys, os, py_compile
 
 files = '''$files'''
 sys.stdout.write('Byte-compiling python modules (optimized versions) ...\n')
@@ -153,10 +132,7 @@ for file in files.split():
 	    continue
     sys.stdout.write(file)
     sys.stdout.flush()
-    if hasattr(imp, 'get_tag'):
-        py_compile.compile(filepath, imp.cache_from_source(filepath, False), path)
-    else:
-        py_compile.compile(filepath, filepath + 'o', path)
+    py_compile.compile(filepath, filepath + 'o', path)
 sys.stdout.write('\n')" 2>/dev/null || :
 
 # Local Variables:

@@ -5,7 +5,7 @@
  * manipulation, and synthesis of digitized sounds using the Reassigned 
  * Bandwidth-Enhanced Additive Sound Model.
  *
- * Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+ * Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,9 +30,8 @@
  *
  * This strategy attemps to follow a reference frequency envelope when 
  * forming Partials, by prewarping all peak frequencies according to the
- * (inverse of) frequency reference envelope. The frequency warping is 
- * performed only when computing frequency distances (differences), so 
- * the stored Partial frequencies remain correct.
+ * (inverse of) frequency reference envelope. At the end of the analysis, 
+ * Partial frequencies need to be un-warped by calling fixPartialFrequencies().
  *
  * Kelly Fitz, 28 May 2003
  * loris@cerlsoundgroup.org
@@ -78,7 +77,7 @@ public:
     //  warping envelope is applied to the spectral peak frequencies
     //  and the frequency drift parameter in each frame before peaks
     //  are linked to eligible Partials. All the Partial frequencies
-    //  need to be un-warped at the end of the building process, by
+    //  need to be un-warped at the ned of the building process, by
     //  calling finishBuilding().
 	PartialBuilder( double drift, const Envelope & freqWarpEnv );
 	
@@ -90,21 +89,26 @@ public:
     //
     //	This is similar to the basic MQ partial formation strategy, except that
     //	before matching, all frequencies are normalized by the value of the 
-    //	warping envelope at the time of the current frame. 
-    void buildPartials( Peaks & peaks, double frameTime );
+    //	warping envelope at the time of the current frame. This means that
+    //	the frequency envelopes of all the Partials are warped, and need to 
+    //	be un-normalized by calling finishBuilding at the end of the building
+    //  process.
+	void buildPartials( Peaks & peaks, double frameTime );
 
     //  finishBuilding
     //
-	//	Return the Partials that were built. After calling finishBuilding, the
+	//	Un-do the frequency warping performed in buildPartials, and return 
+	//	the Partials that were built. After calling finishBuilding, the
     //  builder is returned to its initial state, and ready to build another
-    //  set of Partials. 
-	PartialList finishBuilding( void );
+    //  set of Partials. Partials are returned by appending them to the 
+    //  supplied PartialList.
+	void finishBuilding( PartialList & product );
 
 private:
 
 // --- auxiliary member functions ---
 
-    double warped_freq_distance( const Partial & partial, const SpectralPeak & pk );
+    double freq_distance( const Partial & partial, const SpectralPeak & pk );
 
     bool better_match( const Partial & part, const SpectralPeak & pk1,
 		   	           const SpectralPeak & pk2 );

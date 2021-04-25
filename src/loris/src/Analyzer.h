@@ -5,7 +5,7 @@
  * manipulation, and synthesis of digitized sounds using the Reassigned 
  * Bandwidth-Enhanced Additive Sound Model.
  *
- * Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+ * Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,8 +38,6 @@
 #include "Partial.h"
 #include "PartialList.h"
 // #include "SpectralPeaks.h"
-
-
 
 //  begin namespace
 namespace Loris {
@@ -214,7 +212,7 @@ public:
     //! 
     //! \param  vec is a vector of floating point samples
     //! \param  srate is the sample rate of the samples in the vector 
-    PartialList analyze( const std::vector<double> & vec, double srate );
+    void analyze( const std::vector<double> & vec, double srate );
     
     //! Analyze a range of (mono) samples at the given sample rate      
     //! (in Hz) and store the extracted Partials in the Analyzer's
@@ -224,7 +222,7 @@ public:
     //! \param  bufEnd is (one-past) the end of a buffer of floating point 
     //!         samples
     //! \param  srate is the sample rate of the samples in the buffer
-    PartialList analyze( const double * bufBegin, const double * bufEnd, double srate );
+    void analyze( const double * bufBegin, const double * bufEnd, double srate );
     
 //  -- tracking analysis --
 
@@ -237,7 +235,7 @@ public:
     //! \param  srate is the sample rate of the samples in the vector
     //! \param  reference is an Envelope having the approximate
     //!         frequency contour expected of the resulting Partials.
-    PartialList analyze( const std::vector<double> & vec, double srate, 
+    void analyze( const std::vector<double> & vec, double srate, 
                   const Envelope & reference );
     
     //! Analyze a range of (mono) samples at the given sample rate      
@@ -251,7 +249,7 @@ public:
     //! \param  srate is the sample rate of the samples in the buffer
     //! \param  reference is an Envelope having the approximate
     //!         frequency contour expected of the resulting Partials.
-    PartialList analyze( const double * bufBegin, const double * bufEnd, double srate,
+    void analyze( const double * bufBegin, const double * bufEnd, double srate,
                   const Envelope & reference );
     
 //  -- parameter access --
@@ -458,6 +456,16 @@ public:
         }
            
 
+//  -- PartialList access --
+
+    //! Return a mutable reference to this Analyzer's list of 
+    //! analyzed Partials. 
+    PartialList & partials( void );
+
+    //! Return an immutable (const) reference to this Analyzer's 
+    //! list of analyzed Partials. 
+    const PartialList & partials( void ) const;
+
 //  -- envelope access --
 
     enum { Default_FundamentalEnv_ThreshDb = -60, 
@@ -522,7 +530,7 @@ private:
                                 //!  the main lobe width more explicitly highlights
                                 //!  the critical interaction with resolution
     
-    // std::auto_ptr< Envelope > m_freqFloorEnv; someday...
+    // std::auto_ptr< Envelope > m_freqFloorEnv; 
     double m_freqFloor;         //!  lowest frequency (Hz) component extracted
                                 //!  in spectral analysis
     
@@ -550,6 +558,7 @@ private:
     bool m_phaseCorrect;        //!  flag indicating that phases/frequencies should be
                                 //!  made consistent at the end of the analysis
                             
+    PartialList m_partials;     //!  collect Partials here
         
     //! builder object for constructing a fundamental frequency
     //! estimate during analysis
@@ -567,12 +576,7 @@ private:
 	//	analysis. If analysis were ever to be made into a 
 	//	template method, these would be the operations that
 	//	derived classes could override. Or each of these could
-	//	be represented by a policy class (more or less the 
-    //  design strategy that has been pursued so far). In this 
-    //  case, it would be necessary for derived classes to be 
-    //  able to provide their own implementations of the policy 
-    //  class somehow (e.g. virtual members that instantiate the
-    //  policy classes).
+	//	be represented by a strategy class.
 
 	//!	Compute the spectrum of the next sequence of samples.
 	void computeSpectrum( void );

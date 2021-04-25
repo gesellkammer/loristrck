@@ -1,4 +1,4 @@
-# Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+# Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
 # <loris@cerlsoundgroup.org>
 #  
 # This file is free software; as a special exception the author gives
@@ -14,7 +14,7 @@ EXTRA_DIST = clarinet.aiff flute.aiff fromKyma.spc morphtest.py \
 
 MAINTAINERCLEANFILES = Makefile.in
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -Wno-comment
+AM_CPPFLAGS = -I$(top_srcdir)/src
 
 # simple morphing test
 test_cpp_SOURCES = morphtest.C
@@ -80,10 +80,9 @@ if DARWIN
 SET_DARWIN_ENV = "env DYLD_LIBRARY_PATH=$(top_builddir)/src/.libs"
 endif
 
-.PHONY: $(PYTHON_TEST)
 $(PYTHON_TEST):
 	echo "$(SET_PYTHON_ENV) $(SET_DARWIN_ENV) \
-              $(PYTHON) $(top_srcdir)/test/morphtest.py" > $@
+              $(PYTHON) $(top_srcdir)/test/morphtest.py" >> $@
 	chmod +x $@
 endif
 
@@ -114,4 +113,4 @@ TESTS = $(check_PROGRAMS) $(check_SCRIPTS)
 CLEANFILES = $(PYTHON_TEST) $(CSOUND_TEST)
 
 clean-local:
-	-rm -fr *.ctest.* *.pytest.* *.pi.* tmp.sdif csound_opcode_test.aiff flutefundamental.aiff
+	-rm -fr *.ctest.* *.pytest.* *.pi.* tmp.sdif csound_opcode_test.aiff

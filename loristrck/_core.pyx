@@ -109,9 +109,11 @@ def analyze(double[::1] samples not None, double sr, double resolution, double w
     cdef int winSamples = kaiserWindowLength(an.windowWidth(), sr, an.sidelobeLevel())
     logger.info(f"analysis: windowsize={an.windowWidth()}Hz ({winSamples} samples), hop={int(an.hopTime()*1000)}ms, freqdrift={an.freqDrift()}Hz")
 
-    cdef double *samples0 = &(samples[0])              #<double*> _np.PyArray_DATA(samples)
-    cdef double *samples1 = &(samples[<int>(samples.size-1)]) #samples0 + <int>(samples.size - 1)
-    cdef loris.PartialList partials = an.analyze(samples0, samples1, sr)
+    cdef double *samples_begin = &(samples[0])              #<double*> _np.PyArray_DATA(samples)
+    cdef double *samples_end = &(samples[<int>(samples.size-1)]) #samples0 + <int>(samples.size - 1)
+    an.analyze(samples_begin, samples_end, sr)
+    cdef loris.PartialList partials = an.partials()
+    # cdef loris.PartialList partials = an.analyze(samples_begin, samples_end, sr)
     del an
     cdef loris.SdifFile* sdiffile
     cdef string filename
@@ -201,7 +203,7 @@ cdef inline loris.Breakpoint* newBreakpoint(double f, double a, double ph, doubl
     return out
 
 
-cdef loris.Partial* newPartial_fromarray(_np.ndarray[SAMPLE_t, ndim=2] a, float fadetime=0):
+cdef loris.Partial* newPartial_fromarray(_np.ndarray[SAMPLE_t, ndim=2] a):
     cdef loris.Partial *p = new loris.Partial()
     cdef int numbps = len(a)
     cdef loris.Breakpoint *bp 
@@ -225,9 +227,6 @@ cdef loris.Partial* newPartial_fromarray(_np.ndarray[SAMPLE_t, ndim=2] a, float 
             bp = newBreakpoint(a[i, 1], a[i, 2], a[i, 3], a[i, 4])
             p.insert(a[i, 0], deref(bp))
             del bp
-    if fadetime > 0:
-        p.fadeIn(fadetime)
-        p.fadeOut(fadetime)
     return p
 
     
@@ -310,7 +309,7 @@ cdef class PartialListW:
         return self.thisptr.size()
 
 
-cpdef PartialListW newPartialList(partials, labels=None, double fadetime=0):
+cpdef PartialListW newPartialList(partials, labels=None):
     """
     Creates a new loris PartialList from the given data, and a PartialListW 
     (a wrapper) around that PartialList
@@ -320,9 +319,8 @@ cpdef PartialListW newPartialList(partials, labels=None, double fadetime=0):
             Each partial is a 2D array of shape (num rows, 5) with columns
             (time, freq, amp, phase, bandwidth)
         labels: if given, a list of integers of the same length as partials
-        fadetime: a fadetime applied to each partial when synthesizing
     """
-    cdef loris.PartialList *plist = PartialList_fromdata(partials, fadetime)
+    cdef loris.PartialList *plist = PartialList_fromdata(partials)
     cdef PartialListW self = PartialListW()
     self.thisptr = plist
     if labels is not None:
@@ -332,7 +330,7 @@ cpdef PartialListW newPartialList(partials, labels=None, double fadetime=0):
     return self
 
 
-def _write_sdif(partials, outfile, labels=None, rbep=True, double fadetime=0):
+def _write_sdif(partials, outfile, labels=None, rbep=True):
     """
     Write a list of partials in the sdif 
     
@@ -353,7 +351,7 @@ def _write_sdif(partials, outfile, labels=None, rbep=True, double fadetime=0):
 
     """
     assert _isiterable(partials)
-    cdef loris.PartialList *ps = PartialList_fromdata(partials, fadetime)
+    cdef loris.PartialList *ps = PartialList_fromdata(partials)
     logger.debug("Converted to PartialList. Num. partials: %d", ps.size())
     cdef loris.SdifFile* sdiffile = new loris.SdifFile(ps.begin(), ps.end())
     if not isinstance(outfile, bytes):
@@ -414,7 +412,7 @@ cdef void PartialList_dump(loris.PartialList *plist):
         idx += 1
         
         
-cdef loris.PartialList* PartialList_fromdata(dataseq, double fadetime=0):
+cdef loris.PartialList* PartialList_fromdata(dataseq):
     """
     dataseq: a seq. of 2D double arrays, each array represents a partial
     
@@ -425,7 +423,7 @@ cdef loris.PartialList* PartialList_fromdata(dataseq, double fadetime=0):
     cdef int i = 0
     cdef int label
     for matrix in dataseq:
-        partial = newPartial_fromarray(matrix, fadetime)
+        partial = newPartial_fromarray(matrix)
         if partial != NULL:
             partials.push_back(deref(partial))
             del partial # fix this: use std::move
@@ -467,7 +465,7 @@ def read_aiff(path):
         i += 1
         inc(it)
     del aiff
-    return (mono, samplerate)
+    return np.asarray(mono), samplerate
 
         
 cdef object PartialList_timespan(loris.PartialList * partials):
@@ -654,7 +652,7 @@ def estimatef0(partials, double minfreq, double maxfreq, double interval):
         All times can be calculated via `numpy.arange(start_time, end_time, interval)
     
     """
-    cdef loris.PartialList *pl = PartialList_fromdata(partials, 0)
+    cdef loris.PartialList *pl = PartialList_fromdata(partials)
     out = PartialList_estimatef0_with_confidence(pl, minfreq, maxfreq, interval)
     del pl
     return out

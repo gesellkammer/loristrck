@@ -1,4 +1,4 @@
-dnl Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken 
+dnl Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken 
 dnl <loris@cerlsoundgroup.org>
 dnl  
 dnl This file is free software; as a special exception the author gives
@@ -11,12 +11,12 @@ dnl implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 
 dnl initialization
-AC_INIT(Loris, 1.9, loris@cerlsoundgroup.org, loris)
+AC_INIT(Loris, 1.8, loris@cerlsoundgroup.org, loris)
 
 AC_CONFIG_AUX_DIR(config)
 AC_SUBST(ac_aux_dir)
 AM_INIT_AUTOMAKE(1.6)
-AC_CONFIG_HEADERS(config.h)
+AM_CONFIG_HEADER(config.h)
 
 dnl LT_INIT
 dnl LT_INIT doesn't seem to work?
@@ -36,9 +36,9 @@ dnl Make sure these are consistent with the version number
 dnl in AC_INIT above, and make sure to check them before 
 dnl each release!!!!!
 LORIS_MAJOR_VERSION=1
-LORIS_MINOR_VERSION=9
+LORIS_MINOR_VERSION=8
 LORIS_SUBMINOR_VERSION=
-LORIS_PRERELEASE_STR="development"
+LORIS_PRERELEASE_STR=
 LORIS_VERSION_STR="$PACKAGE_STRING$LORIS_PRERELEASE_STR"
 AC_SUBST(LORIS_MAJOR_VERSION)
 AC_SUBST(LORIS_MINOR_VERSION)
@@ -252,6 +252,9 @@ AC_MSG_RESULT(----- Language Checks -----)
 dnl----------------------------------------------------------------
 dnl Look for Python
 dnl----------------------------------------------------------------
+dnl This new way is not as flexible as the old way, but it much 
+dnl easier to maintain. Thanks to John Ramsdell for helping to
+dnl clean this up.
 
 AC_ARG_VAR([PYTHON], 
        [Path to python when available])
@@ -271,18 +274,30 @@ if test "$USEPYTHON" == "yes" ; then
     if test -n "$PYTHON" ; then
         dnl use automake tools for finding python, set 
         dnl installation directory for extension modules
-        AM_PATH_PYTHON(2.6)
+        AM_PATH_PYTHON(1.5)
         
         dnl look for the header Python.h
-        dnl 
-        dnl I got this trick from the AX_PYTHON macro
-        PYINCLUDE=`$PYTHON -c "from distutils.sysconfig import *; print(get_config_var('CONFINCLUDEPY'))"`
+        PYBINDIR="`AS_DIRNAME([$PYTHON])`"
+        PYPREFDIR="`AS_DIRNAME([$PYBINDIR])`"
+        PYINCLUDE="$PYPREFDIR/include/python$PYTHON_VERSION"  
 
         dnl try compiling with $PYINCLUDE in the header path
         SAVEFLAGS="$CPPFLAGS"
         CPPFLAGS="-I$PYINCLUDE $CPPFLAGS"
         AC_MSG_CHECKING(for Python.h header file)
         AC_CHECK_HEADERS([Python.h],[
+            dnl check whether this version of Python supports
+            dnl the new style of iterators
+            AC_MSG_CHECKING(for PyExc_StopIteration defined in Python.h)
+            AC_TRY_COMPILE( [ #include <Python.h>;], 
+                            [ PyErr_SetString( PyExc_StopIteration, ""); ], 
+                [
+                    AC_MSG_RESULT(yep)
+                    PYFLAGS="-I$PYINCLUDE"  
+                ], [
+                    AC_MSG_RESULT(nope)
+                    PYFLAGS="-I$PYINCLUDE -DNO_PYTHON_EXC_STOPITER"
+                ] )     
         ],[
             AC_MSG_WARN([Cannot find Python headers. Python support disabled.])
             PYTHON=
@@ -294,12 +309,7 @@ if test "$USEPYTHON" == "yes" ; then
 fi
 
 AM_CONDITIONAL(BUILD_PYTHON, test -n "$PYTHON")
-
-dnl AC_MSG_RESULT(PYINCLUDE is $PYINCLUDE)
-dnl AC_MSG_RESULT(PYFLAGS is $PYFLAGS)
-
 AC_SUBST(PYFLAGS)
-AC_SUBST(PYINCLUDE)
 
 dnl----------------------------------------------------------------
 dnl Look for csound.
@@ -321,7 +331,47 @@ fi
 
 AM_CONDITIONAL([HAVE_CSOUND5], [test -n "$FOUND_CSOUND5"])
 
+AC_ARG_VAR([CSOUND_CONFIG], 
+       [Path to the Csound4 configuration script when available (Linux only)])
+
+
+dnl This configure code, parts provided by John Ramsdell,
+dnl works for Csound GBS versions 4.23f12gbs.10 or later.
+
+AC_ARG_WITH(csound4,
+    AC_HELP_STRING( [--with-csound4],
+                    [build Csound 4 opcodes (default is NO)] ),
+    [USECSOUND4="$withval"], [USECSOUND4="no"])
+
 if test "$FOUND_CSOUND5" == "yes" ; then
+	USECSOUND4="no"
+fi
+
+if test "$USECSOUND4" == "yes" ; then
+    AC_PATH_PROG([CSOUND_CONFIG], [csound-config])
+    FOUND_CSOUND4="$CSOUND_CONFIG"
+
+    dnl try to use csound config to get build flags
+    dnl for the csound opcodes
+    if test -n "$CSOUND_CONFIG"; then
+        CSOUND_CXXFLAGS="`$CSOUND_CONFIG --cflags`"
+        
+        CSOUND_PREFIX="`$CSOUND_CONFIG --prefix`"   
+    else
+        AC_CHECK_HEADERS([csound/cs.h],
+            FOUND_CSOUND4="yes",
+            AC_MSG_WARN([Cannot find Csound4 headers. Csound4 support disabled.]))
+    fi
+fi
+AC_SUBST([CSOUND_CXXFLAGS])
+AC_SUBST([CSOUND_PREFIX])
+
+AM_CONDITIONAL([HAVE_CSOUND4], [test -n "$FOUND_CSOUND4"])
+
+if test "$FOUND_CSOUND5" == "yes" ; then
+	HAVE_CSOUND="yes"
+fi
+if test "$FOUND_CSOUND4" == "yes" ; then
 	HAVE_CSOUND="yes"
 fi
 
@@ -331,20 +381,7 @@ fi
 
 AM_CONDITIONAL([HAVE_CSOUND], [test -n "$HAVE_CSOUND"])
 
-dnl----------------------------------------------------------------
-dnl Check whether to build command line utilities
-dnl----------------------------------------------------------------
 
-AC_ARG_WITH(utils,
-    AC_HELP_STRING( [--with-utils],
-                    [build command line utilties (default is YES)] ),
-    [BUILD_UTILS="$withval"], [BUILD_UTILS="yes"])
-    
-AM_CONDITIONAL([BUILD_UTILS], [test "$BUILD_UTILS" == "yes"])
-
-if test "$BUILD_UTILS" == "yes"; then
-    AC_MSG_RESULT(building command line utilties)
-fi
 
 dnl----------------------------------------------------------------
 dnl Check for Loris debugging flag
@@ -358,7 +395,7 @@ AH_TEMPLATE([Debug_Loris],
             [Define to enable internal Loris debugging code (not recommended).])
 
 if test -n "$DEBUG_LORIS"; then
-    if test "$DEBUG_LORIS" == "yes"; then
+    if test "$DEBUG_LORIS"="yes"; then
         AC_MSG_RESULT(enabling debugging code (defining Debug_Loris))
         AC_DEFINE([Debug_Loris])
     else
@@ -366,12 +403,6 @@ if test -n "$DEBUG_LORIS"; then
         AC_DEFINE([Debug_Loris], "$DEBUG_LORIS")
     fi
 fi
-
-
-AC_ARG_ENABLE(debugloris,
-    AC_HELP_STRING( [--enable-debugloris],
-                    [enable internal Loris debugging code (not recommended)] ),
-    [DEBUG_LORIS="$enableval" ], [DEBUG_LORIS=] )
 
 dnl----------------------------------------------------------------
 dnl Generate Makefiles
@@ -393,11 +424,6 @@ else
     echo See "./configure --help".
 fi
 
-if test "$BUILD_UTILS" == "yes" ; then
-    echo Command line utilities: Enabled.
-else
-    echo Command line utilities: Disabled.
-fi
 
 if test -n "$PYTHON" ; then
     echo Python support: Enabled.
@@ -417,7 +443,7 @@ if test -n "$HAVE_CSOUND" ; then
     echo   or libloris.dylib on Mac OS X
 else
     echo Csound support: Disabled.
-    echo Add something to CPPFLAGS to enable.  
+    echo Define CSOUND_CONFIG or add something to CPPFLAGS to enable.  
 	echo See "./configure --help".
 fi
 

@@ -3,7 +3,7 @@
  * manipulation, and synthesis of digitized sounds using the Reassigned 
  * Bandwidth-Enhanced Additive Sound Model.
  *
- * Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+ * Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,7 +41,10 @@
  */
 #include "Marker.h"
 #include "Partial.h"
+
+#if defined(NO_TEMPLATE_MEMBERS)
 #include "PartialList.h"
+#endif
  
 #include <string>
 #include <vector>
@@ -307,7 +310,6 @@ private:
 template< typename Iter >
 SpcFile::SpcFile( Iter begin_partials, Iter end_partials, double midiNoteNum  ) :
 #else
-inline
 SpcFile::SpcFile( PartialList::const_iterator begin_partials, 
 				  PartialList::const_iterator end_partials,
 				  double midiNoteNum ) :
@@ -345,7 +347,6 @@ SpcFile::SpcFile( PartialList::const_iterator begin_partials,
 template<typename Iter>
 void SpcFile::addPartials( Iter begin_partials, Iter end_partials  )
 #else
-inline
 void SpcFile::addPartials( PartialList::const_iterator begin_partials, 
 						   PartialList::const_iterator end_partials  )
 #endif

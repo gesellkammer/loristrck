@@ -3,7 +3,7 @@
  * manipulation, and synthesis of digitized sounds using the Reassigned 
  * Bandwidth-Enhanced Additive Sound Model.
  *
- * Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+ * Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +48,6 @@
 #include "Collator.h"
 #include "Distiller.h"
 #include "FrequencyReference.h"
-#include "PartialList.h"
 #include "PartialUtils.h"
 #include "Resampler.h"
 #include "SdifFile.h"
@@ -981,7 +980,7 @@ int main( int argc, char * argv[] )
         }
         
         cout << "* performing analysis" << endl;
-        Loris::PartialList partials = gAnalyzer->analyze( samples, analysisRate );
+        gAnalyzer->analyze( samples, analysisRate );
         cout << "* analysis complete" << endl;  
         
         //	check or distilling or sifting
@@ -990,61 +989,61 @@ int main( int argc, char * argv[] )
             Loris::LinearEnvelope ref = gAnalyzer->fundamentalEnv();    
             
             Loris::Channelizer chan( ref, 1 );
-            cout << "* channelizing " << partials.size() 
+            cout << "* channelizing " << gAnalyzer->partials().size() 
                  << " partials" << endl;
-            chan.channelize( partials.begin(), 
-                             partials.end() );
+            chan.channelize( gAnalyzer->partials().begin(), 
+                             gAnalyzer->partials().end() );
 								  
 			if ( gDistill > 0 )
 			{
 				Loris::PartialList::iterator it =           
-					std::remove_if( partials.begin(), 
-									partials.end(), 
+					std::remove_if( gAnalyzer->partials().begin(), 
+									gAnalyzer->partials().end(), 
 									Loris::PartialUtils::isLabelEqual( 0 ) );
 									
-				if ( it != partials.end() )
+				if ( it != gAnalyzer->partials().end() )
 				{
 					cout << "* removing unlabeled partials" << endl;
-					partials.erase( it, partials.end() );
+					gAnalyzer->partials().erase( it, gAnalyzer->partials().end() );
 				}
 				
-				cout << "* distilling " << partials.size() 
+				cout << "* distilling " << gAnalyzer->partials().size() 
 					  << " partials" << endl;
-				Loris::Distiller::distill( partials,
+				Loris::Distiller::distill( gAnalyzer->partials(),
 										   Loris::Distiller::DefaultFadeTimeMs/1000.0, 
 										   Loris::Distiller::DefaultSilentTimeMs/1000.0 );
 			}
 			else
 			{
-				cout << "* sifting " << partials.size() 
+				cout << "* sifting " << gAnalyzer->partials().size() 
 					  << " partials" << endl;
-				Loris::Sieve::sift( partials.begin(), 
-									partials.end(), 
+				Loris::Sieve::sift( gAnalyzer->partials().begin(), 
+									gAnalyzer->partials().end(), 
 									Loris::Sieve::DefaultFadeTimeMs/1000.0 );
 													
 				Loris::PartialList::iterator it =           
-					std::remove_if( partials.begin(), 
-									partials.end(), 
+					std::remove_if( gAnalyzer->partials().begin(), 
+									gAnalyzer->partials().end(), 
 									Loris::PartialUtils::isLabelEqual( 0 ) );
 									
-				if ( it != partials.end() )
+				if ( it != gAnalyzer->partials().end() )
 				{
 					cout << "* removing unlabeled partials" << endl;
-					partials.erase( it, partials.end() );
+					gAnalyzer->partials().erase( it, gAnalyzer->partials().end() );
 				}
 				
-				cout << "* distilling " << partials.size() 
+				cout << "* distilling " << gAnalyzer->partials().size() 
 					  << " partials" << endl;
-				Loris::Distiller::distill( partials,
+				Loris::Distiller::distill( gAnalyzer->partials(),
 										   Loris::Distiller::DefaultFadeTimeMs/1000.0, 
 										   Loris::Distiller::DefaultSilentTimeMs/1000.0 );
 			}
         }
         else if ( gCollate )
         {
-            cout << "* collating " << partials.size();
+            cout << "* collating " << gAnalyzer->partials().size();
             cout << " partials" << endl;
-            Loris::Collator::collate( partials,
+            Loris::Collator::collate( gAnalyzer->partials(),
 								      Loris::Collator::DefaultFadeTimeMs/1000.0, 
 									  Loris::Collator::DefaultSilentTimeMs/1000.0 );
         }
@@ -1052,26 +1051,27 @@ int main( int argc, char * argv[] )
         if ( gResample > 0 )
         {
             Loris::Resampler resamp( gResample );
-            cout << "* resampling " << partials.size() 
+            cout << "* resampling " << gAnalyzer->partials().size() 
                  << " partials at " << 1000*gResample << " ms intervals" << endl;
-            resamp.resample( partials );
+            resamp.resample( gAnalyzer->partials().begin(), 
+                             gAnalyzer->partials().end() );
         }
             
-        cout << "* exporting " << partials.size(); 
+        cout << "* exporting " << gAnalyzer->partials().size(); 
         cout << " partials to " << gOutFileName << endl;
-        Loris::SdifFile outfile( partials.begin(), 
-                                 partials.end() );
+        Loris::SdifFile outfile( gAnalyzer->partials().begin(), 
+                                 gAnalyzer->partials().end() );
         outfile.markers() = markers;
         outfile.write( gOutFileName );
         
         if ( ! gTestFileName.empty() )
         {
             cout << "* exporting rendered partials to " << gTestFileName << endl;
-            Loris::PartialUtils::crop( partials.begin(),
-                                       partials.end(),
+            Loris::PartialUtils::crop( gAnalyzer->partials().begin(),
+                                       gAnalyzer->partials().end(),
                                        0, 99999999. );
-            Loris::AiffFile testfile( partials.begin(), 
-                                      partials.end(), gRate );
+            Loris::AiffFile testfile( gAnalyzer->partials().begin(), 
+                                      gAnalyzer->partials().end(), gRate );
             testfile.markers() = markers;
             testfile.write( gTestFileName );
         }

@@ -3,7 +3,7 @@
  * manipulation, and synthesis of digitized sounds using the Reassigned 
  * Bandwidth-Enhanced Additive Sound Model.
  *
- * Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+ * Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,10 +24,8 @@
  *
  *	SWIG interface file describing the PartialList, Partial, and
  *  Breakpoint classes, and iterators on Partials and PartialLists.
- *	
- *	Include this file in loris.i to include these classes and functions 
- *  in the scripting module. This interface file does not stand on its own.
- *
+ *	Include this file in loris.i to include the PartialList class
+ *	interface in the scripting module. 
  *
  * Kelly Fitz, 17 Nov 2000
  * loris@cerlsoundgroup.org
@@ -46,8 +44,12 @@
 %newobject *::findAfter;
 %newobject *::findNearest;
 	
+
 /* ***************** inserted C++ code ***************** */
 %{
+#include <Partial.h>
+#include <PartialList.h>
+#include <Notifier.h>
 
 using Loris::debugger;
 using Loris::Partial;
@@ -117,30 +119,12 @@ struct SwigPartialIterator
 /* ***************** end of inserted C++ code ***************** */
 
 /* *********** exception handling for new iterators *********** */
-
 /*	Exception handling code copied from the SWIG manual. 
 	Tastes great, less filling.
 	Defined in loris.i.
 */
 
 %include exception.i
-%exception __next__
-{
-    char * err;
-    clear_exception();
-    $action
-    if ((err = check_exception()))
-    {
-#if defined(SWIGPYTHON)
-		PyErr_SetString(PyExc_StopIteration, err);
-		return NULL;
-#else
-        SWIG_exception( SWIG_ValueError, err );
-#endif
-    }
-}
-
-// dumb, appears that I have to duplicate this?
 %exception next
 {
     char * err;
@@ -149,14 +133,17 @@ struct SwigPartialIterator
     if ((err = check_exception()))
     {
 #if defined(SWIGPYTHON)
-		PyErr_SetString(PyExc_StopIteration, err);
+		%#ifndef NO_PYTHON_EXC_STOPITER
+		PyErr_SetString( PyExc_StopIteration, err );
 		return NULL;
+		%#else
+		SWIG_exception( SWIG_ValueError, err );
+		%#endif
 #else
         SWIG_exception( SWIG_ValueError, err );
 #endif
     }
 }
-
 
 %exception PartialList::erase
 {
@@ -170,7 +157,6 @@ struct SwigPartialIterator
 }
 
 /* ******** end of exception handling for new iterators ******** */
-
 
 /* ***************** new PartialList iterator ****************** */
 
@@ -197,7 +183,7 @@ been returned by this iterator.") next;
 
 	Partial * next( void );
 
-#ifdef SWIGPYTHON
+#ifdef SIWGPYTHON
     %extend
     {
 %feature("docstring",
@@ -215,16 +201,6 @@ been returned by this iterator.") next;
         {
             return self;
         }
-        
-%feature("docstring",
-"Return the next Partial in the PartialList that has not yet
-been returned by this iterator.") __next__;
-
-        Partial * __next__( void )
-        {
-            return self->next();
-        }
-                
     }
 #endif
 };
@@ -255,13 +231,13 @@ been returned by this iterator.") next;
 
 	BreakpointPosition * next( void );
 	
-#ifdef SWIGPYTHON
+#ifdef SIWGPYTHON
     %extend
     {
  %feature("docstring",
 "Return this iterator.") __iter__;
 
-        SwigPartialIterator * __iter__( void )
+       SwigPartialIterator * __iter__( void )
         {
             return self;
         }
@@ -273,16 +249,6 @@ been returned by this iterator.") next;
         {
             return self;
         }
-        
-%feature("docstring",
-"Return the next Breakpoint in the Partial that has not yet
-been returned by this iterator.") __next__;
-
-        BreakpointPosition * __next__( void )
-        {
-            return self->next();
-        }
-        
     }
 #endif
 };
@@ -329,11 +295,8 @@ of the Partials in another).") PartialList;
 
 	unsigned long size( void );
 
-}; //   end of C++ PartialList class interface
-
-
-//  Added methods, not part of the C++ interface:
-%extend PartialList {
+	%extend
+	{
 
 %feature("docstring",
 "Return an iterator on the Partials in this PartialList.") iterator;
@@ -452,348 +415,10 @@ This member is deprecated, use the normal copy constructor:
 		{
 			return new PartialList( *self );
 		}
-		
-		
-		
-%feature("docstring", 
-"Label Partials in this PartialList with the integer nearest to the
-amplitude-weighted average ratio of their frequency envelope to a
-reference frequency envelope. If a reference frequency is specified,
-then the reference envelope is constant at that frequency.
 
-The frequency spectrum is partitioned into non-overlapping channels
-whose time-varying center frequencies track the reference frequency
-envelope. The reference label indicates which channel's center
-frequency is exactly equal to the reference envelope frequency, and
-other channels' center frequencies are multiples of the reference
-envelope frequency divided by the reference label. Each Partial in the
-PartialList is labeled with the number of the channel that best fits
-its frequency envelope. Partials are labeled, but otherwise
-unmodified.
+	}	//	end of added methods
 
-For finer control over channelization, including harmonic stretching
-for stiff strings, and amplitude weighting for determining the
-best-fitting channel, use the Channelizer class."
-) channelize;
-
-    void channelize( LinearEnvelope * refFreqEnvelope, int refLabel )
-    {
-        Channelizer::channelize( *self, *refFreqEnvelope, refLabel );
-    }
-
-
-	void channelize( double refFreq )
-    {
-    	//	create a constant envelope at refFreq
-    	LinearEnvelope env( refFreq );    	
-		Channelizer::channelize( *self, env, 1 );
-    }
-                 
-	
-%feature("docstring",
-"Collate unlabeled (zero-labeled) Partials into the smallest-possible 
-number of Partials that does not combine any overlapping Partials.
-Collated Partials assigned labels higher than any label in the original 
-list, and appear at the end of the sequence, after all previously-labeled
-Partials. Optionally specify the fade and gap times, else default values
-are used.") collate;
-
-    void collate( double fadeTime = Collator::DefaultFadeTimeMs/1000.0, 
-				  double gapTime = Collator::DefaultSilentTimeMs/1000.0 )
-    {
-    	Collator c( fadeTime, gapTime );
-        c.collate( *self );
-    }
-    
-%feature("docstring",
-"Trim Partials by removing Breakpoints outside a specified time span.
-Insert a Breakpoint at the boundary when cropping occurs.
-") crop;
-
-    void crop( double t1, double t2 )
-    {
-        crop( self, t1, t2 );
-    }
-    
-
-%feature("docstring", 
-"Dilate Partials in this PartialList according to the given initial
-and target time points. Partial envelopes are stretched and
-compressed so that temporal features at the initial time points
-are aligned with the final time points. Time points are sorted, so
-Partial envelopes are are only stretched and compressed, but
-breakpoints are not reordered. Duplicate time points are allowed.
-There must be the same number of initial and target time points.") dilate;
-
-
-    //	dilate needs a contract to guarantee that the
-    //	same number of initial and target points are
-    //	provided.
-    %contract dilate( const std::vector< double > & ivec, 
-                      const std::vector< double > & tvec ) 
-    {
-    require:
-        ivec->size() == tvec->size();
-    }
-
-
-	void dilate( const std::vector< double > & ivec, 
-				 const std::vector< double > & tvec )
-	{
-		const double * initial = &( ivec.front() );
-		const double * target = &( tvec.front() );
-		int npts = ivec.size();
-		dilate( self, initial, target, npts );
-	}
-
-		
-%feature("docstring",
-"Distill labeled (channelized) Partials in this PartialList into a 
-PartialList containing at most one Partial per label. Unlabeled 
-(zero-labeled) Partials are left unmodified at the end of the 
-distilled Partials. Optionally specify the fade and gap times, 
-defaults are 5ms and 1ms.
-") distill;
-
-
-	void distill( double fadeTime = Distiller::DefaultFadeTimeMs/1000.0, 
-				  double gapTime = Distiller::DefaultSilentTimeMs/1000.0 )
-	{
-		try
-		{
-			Distiller d( fadeTime, gapTime );
-			d.distill( *self );
-		}
-		catch ( std::exception & ex )
-		{
-			throw_exception( ex.what() );
-		}
-	}
-		
-%feature("docstring",
-"Apply a reference Partial to fix the frequencies of Breakpoints
-whose amplitude is below threshold_dB. Threshold 0 harmonifies all
-Partials. To apply only to quiet Partials, specify a lower 
-threshold (like -90). The reference Partial is the first Partial
-in the PartialList labeled refLabel (usually 1). The Envelope,
-if specified, is a time-varying weighting on the harmonifing process. 
-When 1, harmonic frequencies are used, when 0, breakpoint frequencies are 
-unmodified. ") harmonify;
-
-	void harmonify( long refLabel, const Envelope * env, double threshold_dB )
-	{
-		try
-		{
-			Harmonifier::harmonify( self->begin(), self->end(), 
-									refLabel, *env, threshold_dB );
-		}
-		catch ( std::exception & ex )
-		{
-			throw_exception( ex.what() );
-		}
-	}
-
-    void harmonify( long refLabel, double threshold_dB )
-    {
-        LinearEnvelope e( 1 );
-        try
-		{
-			Harmonifier::harmonify( self->begin(), self->end(), 
-                                	refLabel, e, threshold_dB );
-		}
-		catch ( std::exception & ex )
-		{
-			throw_exception( ex.what() );
-		}
-    }
-
-
-%feature("docstring",
-"Resample all Partials in a PartialList using the specified
-sampling interval, so that the Breakpoints in the Partial
-envelopes will all lie on a common temporal grid. 
-
-The Breakpoint times in resampled Partials will comprise a
-contiguous sequence of ALL integer multiples of the sampling interval
-(a lot of data, but useful for some third-party tools, like the CNMAT
-sinusoids~ external for Max/MSP). 
-
-If a timing envelope is specified, then that envelope represents
-a warping of the time axis that is applied during resampling. The
-Breakpoint times in resampled Partials will a comprise contiguous 
-sequence of all integer multiples of the sampling interval between 
-the first and last breakpoints in the timing envelope, and each 
-Breakpoint will represent the parameters of the original Partial 
-at the time that is the value of the timing envelope at that instant.
-This can be used to achieve effects similar to dilation (see dilate),
-but can also be used to achieve time-reveral and scrubbing effects.
-
-If phase correct resampling is selected, Partial frequencies are
-altered slightly to match, as nearly as possible, the Breakpoint
-phases after resampling. Phases are updated so that the Partial
-frequencies and phases are consistent after resampling. The
-default is phase correct resampling, unless a timing envelope
-is specified, in which case it is better to explcitly match
-phases at known critical points.
-
-See also quantize, which was previously described as sparse
-resampling.") resample;
-
-
-    void resample( double interval, bool denseResampling = true, bool phaseCorrect = true )
-	{
-			
-		try
-		{		
-			Resampler r( interval );
-			r.setPhaseCorrect( phaseCorrect );
-			if ( denseResampling )
-			{
-                r.resample( *self );
-            }
-            else
-            {
-                r.quantize( *self );
-            }
-		}
-		catch ( std::exception & ex )
-		{
-			throw_exception( ex.what() );
-		}
-	}
-
-	void resample( LinearEnvelope * timing, double interval, bool phaseCorrect = false )
-	{			
-		try
-		{		
-			Resampler r( interval );
-			r.setPhaseCorrect( phaseCorrect );
-			r.resample( *self, *timing );
-		}
-		catch ( std::exception & ex )
-		{
-			throw_exception( ex.what() );
-		}
-	}
-
-%feature("docstring",
-"Quantize the Breakpoint times in the specified Partials.
-Each Breakpoint in the Partials is replaced by a Breakpoint
-constructed by resampling the Partial at the nearest
-integer multiple of the of the resampling interval.
-
-In previous versions of Loris, this was called sparse resampling.
-") quantize;
-	
-	void quantize( double interval )
-	{
-		try
-		{		
-			Resampler r( interval );
-			r.setPhaseCorrect( true );
-			r.quantize( *self );
-		}
-		catch ( std::exception & ex )
-		{
-			throw_exception( ex.what() );
-		}
-	}
-
-
-%feature("docstring",
-"Eliminate overlapping Partials having the same label
-(except zero). If any two partials with same label
-overlap in time, keep only the longer of the two.
-Set the label of the shorter duration partial to zero.
-Optionally specify the fade time, default is 1ms.") sift;
-
-	void sift( double fadeTime = Sieve::DefaultFadeTimeMs/1000.0 )
-	{
-		Sieve s( fadeTime );
-		s.sift( *self );
-	}
-	
-	
-%feature("docstring",
-"Scale the amplitude of a Partial, or all Partials in a PartialList, according 
-to an envelope representing a time-varying amplitude scale value.")
-scaleAmplitude;				 
-
-	void scaleAmplitude( Envelope * ampEnv )
-	{
-		PartialUtils::scaleAmplitude( self->begin(), self->end(), *ampEnv );
-	}
-
-   void scaleAmplitude( double val )
-	{
-		LinearEnvelope e( val );
-		PartialUtils::scaleAmplitude( self->begin(), self->end(), e );
-	}
-
-%feature("docstring",
-"Scale the bandwidth of a Partial, or all Partials in a PartialList, according 
-to an envelope representing a time-varying bandwidth scale value.") scaleBandwidth;
-
-    void scaleBandwidth( Envelope * bwEnv )
-	{
-		PartialUtils::scaleBandwidth( self->begin(), self->end(), *bwEnv );
-	}
-				 
-	void scaleBandwidth( double val )
-	{
-		LinearEnvelope e( val );
-		PartialUtils::scaleBandwidth( self->begin(), self->end(), e );
-	}
-	
-%feature("docstring",
-"Scale the frequency of a Partial, or all Partials in a PartialList, according 
-to an envelope representing a time-varying frequency scale value.") scaleFrequency;
-				 
-	void scaleFrequency( Envelope * freqEnv )
-	{
-		PartialUtils::scaleFrequency( self->begin(), self->end(), *freqEnv );
-	}
-
-	void scaleFrequency( double val )
-	{
-		LinearEnvelope e( val );
-		PartialUtils::scaleFrequency( self->begin(), self->end(), e );
-	}
-	
-%feature("docstring",
-"Scale the relative noise content of a Partial, or all Partials in a PartialList,
-according to an envelope representing a (time-varying) noise energy 
-scale value.") scaleNoiseRatio;
-
-    void scaleNoiseRatio( Envelope * noiseEnv )
-	{
-		PartialUtils::scaleNoiseRatio( self->begin(), self->end(), *noiseEnv );
-	}
-
-	void scaleNoiseRatio( double val )
-	{
-		LinearEnvelope e( val );
-		PartialUtils::scaleNoiseRatio( self->begin(), self->end(), e );
-	}
-	
-%feature("docstring",
-"Set the bandwidth of a Partial, or all Partials in a PartialList, according 
-to an envelope representing a time-varying bandwidth value.") setBandwidth;
-
-	void setBandwidth( Envelope * bwEnv )
-	{
-		PartialUtils::setBandwidth( self->begin(), self->end(), *bwEnv );
-	}
-	
-	void setBandwidth( double val )
-	{
-		LinearEnvelope e( val );
-		PartialUtils::setBandwidth( self->begin(), self->end(), e );
-	}
-    		
-	
-};	//	end of added methods
-
+};
 
 /* ********************* end of PartialList ********************* */
 

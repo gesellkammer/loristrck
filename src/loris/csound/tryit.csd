@@ -26,7 +26,7 @@ nchnls = 1
 ;
 instr 1
     ktime    linseg      0, p3, 3.0    ; linear time function from 0 to 3 seconds
-             lorisread   ktime, "clarinet.sdif", 1, 1, 1, 1, 0.001
+             lorisread   ktime, "clarinet.sdif", 1, 1, 1, 1, .001
     asig     lorisplay   1, 1, 1, 1
              out         asig
 endin
@@ -51,7 +51,7 @@ instr 2
     kvib     oscil       kvenv, 4, 1   ; table 1, sinusoid
 
     kbwenv   linseg      1, p3/6, 1, p3/6, 2, 2*p3/3, 2
-             lorisread   ktime, "clarinet.sdif", 1, 1, 1, 1, 0.001
+             lorisread   ktime, "clarinet.sdif", 1, 1, 1, 1, .001
     a1       lorisplay   1, ifscale+kvib, 2, kbwenv  
     a2       atone       a1, 1000      ; highpass filter, cutoff 1000 Hz
              out         a2
@@ -102,54 +102,4 @@ i 2     4     6    8.07
 e
 </CsScore>
 
-</CsoundSynthesizer><bsbPanel>
- <label>Widgets</label>
- <objectName/>
- <x>0</x>
- <y>22</y>
- <width>400</width>
- <height>200</height>
- <visible>true</visible>
- <uuid/>
- <bgcolor mode="nobackground">
-  <r>231</r>
-  <g>46</g>
-  <b>255</b>
- </bgcolor>
- <bsbObject version="2" type="BSBVSlider">
-  <objectName>slider1</objectName>
-  <x>5</x>
-  <y>5</y>
-  <width>20</width>
-  <height>100</height>
-  <uuid>{1995cc43-c009-4d9e-b753-ba3fa40127f6}</uuid>
-  <visible>true</visible>
-  <midichan>0</midichan>
-  <midicc>-3</midicc>
-  <minimum>0.00000000</minimum>
-  <maximum>1.00000000</maximum>
-  <value>0.00000000</value>
-  <mode>lin</mode>
-  <mouseControl act="jump">continuous</mouseControl>
-  <resolution>-1.00000000</resolution>
-  <randomizable group="0">false</randomizable>
- </bsbObject>
-</bsbPanel>
-<bsbPresets>
-</bsbPresets>
-<MacOptions>
-Version: 3
-Render: Real
-Ask: Yes
-Functions: ioObject
-Listing: Window
-WindowBounds: 72 179 400 200
-CurrentView: io
-IOViewEdit: On
-Options:
-</MacOptions>
-
-<MacGUI>
-ioView nobackground {59367, 11822, 65535}
-ioSlider {5, 5} {20, 100} 0.000000 1.000000 0.000000 slider1
-</MacGUI>
+</CsoundSynthesizer>

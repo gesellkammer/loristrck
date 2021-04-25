@@ -5,7 +5,7 @@
  * manipulation, and synthesis of digitized sounds using the Reassigned 
  * Bandwidth-Enhanced Additive Sound Model.
  *
- * Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+ * Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -227,13 +227,8 @@ private:
     //! to the distilled collection. If an empty list of Partials
     //! is passed, then an empty Partial having the specified
     //! label is appended.
-    //void distillOne( PartialList & partials, Partial::label_type label,
-    //                 PartialList & distilled );
-
-    //!	Distill a list of Partials into a single Partial and return it.
-    //! If an empty list of Partials is passed, then an empty Partial
-    //! is returned.
-    Partial distillOne( PartialList & partials );                        
+    void distillOne( PartialList & partials, Partial::label_type label,
+                     PartialList & distilled );
     
 };  //  end of class Distiller
 
@@ -300,6 +295,7 @@ template< >
 inline
 PartialList::iterator Distiller::distill( PartialList & partials )
 {
+    debugger << "using PartialList version of distill to avoid copying" << endl;
     return distill_list( partials );
 }
 #else

@@ -3,7 +3,7 @@
  * manipulation, and synthesis of digitized sounds using the Reassigned 
  * Bandwidth-Enhanced Additive Sound Model.
  *
- * Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+ * Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -166,11 +166,11 @@ static void test_markedPartials( void )
 	#endif
 	fout.markers().push_back( Marker( .1, "Marker2" ) );
 	
-	const char * name = "tmp.sdif";
+	char * name = "tmp.sdif";
 	std::cout << "writing " << name << "\n";
-	fout.write( name );
+	fout.write( "tmp.sdif" );
 	std::cout << "reading " << name << "\n";
-	SdifFile f( name );
+	SdifFile f( "tmp.sdif" );
 
 	std::cout << "found " << f.partials().size() << " partials.\n";
 	

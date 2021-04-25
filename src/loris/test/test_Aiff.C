@@ -109,8 +109,8 @@ int main( int argc, char * argv[] )
         // analyze clarinet, don't do this if it isn't the clarinet!
         cout << "analyzing clarinet 4G#" << endl;
         Analyzer a(415*.8, 415*1.6);
-        
-        PartialList clar = a.analyze( f.samples(), f.sampleRate() );
+        a.analyze( f.samples(), f.sampleRate() );
+        PartialList & clar = a.partials();
         
         FrequencyReference clarRef( clar.begin(), clar.end(), 0, 1000, 20 );
         Channelizer ch( clarRef.envelope() , 1 );

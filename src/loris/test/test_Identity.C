@@ -3,7 +3,7 @@
  * manipulation, and synthesis of digitized sounds using the Reassigned 
  * Bandwidth-Enhanced Additive Sound Model.
  *
- * Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+ * Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -157,8 +157,8 @@ static void one_partial( void )
 	anal.setAmpFloor( -50 );
 	anal.setBwRegionWidth( 0 );
     cout << "Using analysis window width " << anal.windowWidth() << " Hz" << endl;
-	
-	PartialList partials = anal.analyze( v, 44100 );
+	anal.analyze( v, 44100 );
+	PartialList & partials = anal.partials();
 	
 	//  need to distill, because the fake partial fades out
 	//  and back in again
@@ -287,8 +287,8 @@ static void two_partials( void )
 	anal.setAmpFloor( -50 );
 	anal.setBwRegionWidth( 0 );
     cout << "Using analysis window width " << anal.windowWidth() << " Hz" << endl;
-	
-	PartialList partials = anal.analyze( v, 44100 );
+	anal.analyze( v, 44100 );
+	PartialList & partials = anal.partials();
 	
 	/*
 	// no need to distill, these partials should pop right out

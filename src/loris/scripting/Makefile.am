@@ -1,4 +1,4 @@
-# Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+# Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
 # <loris@cerlsoundgroup.org>
 #  
 # This file is free software; as a special exception the author gives
@@ -11,15 +11,10 @@
 
 PYTHON_WRAPPER = loris_python_wrap.C
 SWIG_INTERFACE = $(top_srcdir)/scripting/loris.i
-ALL_IFILES = $(SWIG_INTERFACE) \
-             $(top_srcdir)/scripting/lorisAnalyzer.i \
-             $(top_srcdir)/scripting/lorisChannelizer.i \
-             $(top_srcdir)/scripting/lorisEnvelope.i \
-             $(top_srcdir)/scripting/lorisFileIO.i \
+ALL_IFILES = $(SWIG_INTERFACE) $(top_srcdir)/scripting/lorisPartialList.i \
              $(top_srcdir)/scripting/lorisFundamental.i \
-             $(top_srcdir)/scripting/lorisMorph.i \
-             $(top_srcdir)/scripting/lorisPartialList.i \
-             $(top_srcdir)/scripting/lorisPartialListOps.i \
+             $(top_srcdir)/scripting/lorisEnvelope.i \
+             $(top_srcdir)/scripting/lorisChannelizer.i \
              $(top_srcdir)/scripting/lorisSynthesizer.i
 
 
@@ -34,12 +29,12 @@ MAINTAINERCLEANFILES = Makefile.in
 # installing the Python module
 #
 if BUILD_PYTHON
-
+pythonsitepkgdir = $(pyexecdir)
 pyexec_PYTHON = loris.py
 
-pyexec_LTLIBRARIES = _loris.la
+pythonsitepkg_LTLIBRARIES = _loris.la
 nodist__loris_la_SOURCES = $(PYTHON_WRAPPER)
-_loris_la_CXXFLAGS = -I$(top_srcdir)/src -I$(PYINCLUDE) $(PYFLAGS) -Wno-comment
+_loris_la_CXXFLAGS = -I$(top_srcdir)/src $(PYFLAGS) 
 _loris_la_LIBADD = $(top_builddir)/src/libloris.la 
 _loris_la_LDFLAGS = -module -avoid-version 
 

@@ -8,8 +8,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macOS-10.15, windows-2019]
-        #os: [macOS-10.15]
+        #os: [macOS-10.15, windows-2019]
+        os: [macOS-10.15]
         # os: [ubuntu-20.04]
         # os: [ubuntu-20.04, windows-2019, macOS-10.15]
         python-version: [3.8, 3.9]
@@ -28,15 +28,6 @@ jobs:
             brew install fftw
             brew install libsndfile
 
-      - name: Install dependencies windows
-        if: runner.os == 'Windows'
-        run: |
-            choco install libsndfile
-            wget ftp://ftp.fftw.org/pub/fftw/fftw-3.3.5-dll64.zip
-            7z x fftw-3.3.5-dll64.zip
-            mv fftw-3.3.5-dll64 fftw 
-            
-        
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel==1.10.0 twine virtualenv numpy cython
 

@@ -1,7 +1,0 @@
-var searchData=
-[
-  ['harmonifier',['Harmonifier',['../a00030.html',1,'Loris']]],
-  ['harmonifier',['Harmonifier',['../a00030.html#af3ca4028391977039117f4980ddb5fe7',1,'Loris::Harmonifier::Harmonifier(const Partial &amp;ref, double threshold_dB=0)'],['../a00030.html#a2f755a30bca2587b47f85cf3b49a2644',1,'Loris::Harmonifier::Harmonifier(const Partial &amp;ref, const Envelope &amp;env, double threshold_dB=0)'],['../a00030.html#ab113e3e3c6f1b7fe8d08936732eee678',1,'Loris::Harmonifier::Harmonifier(Iter b, Iter e, Partial::label_type refLabel, double threshold_dB=0)'],['../a00030.html#a81f8a0f72419bd69b876ff4b4cb62017',1,'Loris::Harmonifier::Harmonifier(Iter b, Iter e, Partial::label_type refLabel, const Envelope &amp;env, double threshold_dB=0)']]],
-  ['harmonify',['harmonify',['../a00030.html#af6ffc1ac12343654004f0aed1fcd53bc',1,'Loris::Harmonifier::harmonify(Partial &amp;p) const '],['../a00030.html#acbb10977691441110e66ce8570d1ddc0',1,'Loris::Harmonifier::harmonify(Iter b, Iter e)'],['../a00030.html#a2070af0a48cc47d9dfc87254ed00851c',1,'Loris::Harmonifier::harmonify(Iter b, Iter e, Partial::label_type refLabel, double threshold_dB=0)'],['../a00030.html#a551f1d875f33e35a6cd0353dea32d2f0',1,'Loris::Harmonifier::harmonify(Iter b, Iter e, Partial::label_type refLabel, const Envelope &amp;env, double threshold_dB=0)']]],
-  ['hoptime',['hopTime',['../a00004.html#a919997ed5d675986672b6e5044f60409',1,'Loris::Analyzer']]]
-];

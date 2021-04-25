@@ -5,7 +5,7 @@
  * manipulation, and synthesis of digitized sounds using the Reassigned 
  * Bandwidth-Enhanced Additive Sound Model.
  *
- * Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+ * Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -241,10 +241,8 @@ Collator::collate( PartialList & partials )
 {
 #if ! defined(NO_TEMPLATE_MEMBERS)
     typedef typename Container::iterator Iterator;
-    typedef typename Iterator::difference_type DiffType;
 #else
     typedef PartialList::iterator Iterator;
-    typedef Iterator::difference_type DiffType;
 #endif
 
     // Partition the Partials into labeled and unlabeled, 
@@ -292,7 +290,7 @@ Collator::collate( PartialList & partials )
     //  remove extra Partials from the end of the source container
     if ( endCollated != partials.end() )
     {
-        DiffType numLabeled = 
+        typename Iterator::difference_type numLabeled = 
             std::distance( partials.begin(), beginUnlabeled );
 
         partials.erase( endCollated, partials.end() );

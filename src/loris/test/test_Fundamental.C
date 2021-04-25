@@ -3,7 +3,7 @@
  * manipulation, and synthesis of digitized sounds using the Reassigned 
  * Bandwidth-Enhanced Additive Sound Model.
  *
- * Loris is Copyright (c) 1999-2016 by Kelly Fitz and Lippold Haken
+ * Loris is Copyright (c) 1999-2010 by Kelly Fitz and Lippold Haken
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -172,8 +172,9 @@ int main( int argc, char * argv[] )
         cout << "amplitude threshold is " << anal.ampFloor() << endl;    
         cout << "lower bound is " << fmin << endl;
         cout << "upper bound is " << fmax << endl;
-                
-        PartialList plist = anal.analyze( buf, rate );
+        
+        anal.analyze( buf, rate );
+        PartialList plist = anal.partials();
         LinearEnvelope est1 = anal.fundamentalEnv();
 
         x = dumpEnvelope( est1 );
