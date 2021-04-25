@@ -30,8 +30,8 @@ jobs:
             brew install libsndfile
 
       - name: Prepare build in windows
+        uses: ilammy/msvc-dev-cmd@v1         
         if: runner.os == 'windows'
-        uses: ilammy/msvc-dev-cmd@v1
         run: |
             choco install libsndfile
             python scripts/prepare_windows_build.py
