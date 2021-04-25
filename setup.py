@@ -63,7 +63,7 @@ elif sys.platform == 'linux2':
 ######################################
 elif sys.platform == 'win32':
     libs = ["libfftw3-3"]
-    possible_dirs = ('/src/fftw', '/lib/fftw', 'lib/fftw') 
+    possible_dirs = ['/src/fftw', '/lib/fftw', 'lib/fftw'] 
     if python_arch() == 32:
         possible_dirs.append("lib/fftw32")
     else:
