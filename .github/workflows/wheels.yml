@@ -18,8 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-
-
       # Used to host cibuildwheel
       - name: Setup python ${{ matrix.python-version }}
         uses: actions/setup-python@v2

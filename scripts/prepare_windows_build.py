@@ -88,6 +88,14 @@ def generate_lib_files(fftw_folder: Path, arch=32):
     os.chdir(cwd)
 
 
+for d in ["./build",  "./dist", "./*egg-info"]:
+    if os.path.isdir(d):
+        print(f">> Removing dir {d}")
+        shutil.rmtree(d)
+    else:
+        print(f">> Removing file {d}")
+        os.remove(d)
+
 create_cpp_tree(loris_win)
 os.makedirs(tmp_dir, exist_ok=True)
 fftw_folder = download_fftw(arch)
