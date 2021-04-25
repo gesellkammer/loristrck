@@ -77,19 +77,6 @@ elif sys.platform == 'win32':
         #  "-DHAVE_CONFIG_H", 
         "-D_USE_MATH_DEFINES",
     ]
-        
-    print(r"""
-NB: make sure that the FFTW dlls are in the windows PATH
-If FFTW is not found during build, go to http://www.fftw.org/install/windows.html
-Download the DLLs for your system (try the 32-bit package first) and unzip them
-to a directory of your choice. Something like C:\lib\fftw.
-Then add this directory to your PATH. Alternatively, pass the path to the
-setup script as:
-
-    python setup.py install -LC:\my\path\to\fftw`
-
-See README for more information
-""")
 
 sources = []
 
@@ -132,8 +119,8 @@ setup(
     ext_modules = [
         Extension(
             'loristrck._core',
-            # sources=sources + ['loristrck/_core.pyx'],
-            sources=sources + ['loristrck/_core.cpp'],
+            sources=sources + ['loristrck/_core.pyx'],
+            # sources=sources + ['loristrck/_core.cpp'],
                         
             depends=loris_headers,
             include_dirs=include_dirs + [get_numpy_include()],
@@ -148,11 +135,11 @@ setup(
              'bin/loristrck_chord'],
     setup_requires=[
         'numpy>=1.8',
-        # 'cython>=0.25'
+        'cython>=0.25'
     ],
     install_requires=[
         'numpy>=1.8',
-        # 'cython>=0.25',
+        'cython>=0.25',
         'numpyx',
         'soundfile',
         'sounddevice',
