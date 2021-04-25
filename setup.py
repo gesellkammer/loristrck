@@ -21,7 +21,6 @@ include_dirs = [
 ]
 
 library_dirs = []
-libs = ['m', 'fftw3']
 compile_args = ['-DMERSENNE_TWISTER', 
                 '-DHAVE_FFTW3_H']
 
