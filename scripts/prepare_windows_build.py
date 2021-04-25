@@ -18,7 +18,7 @@ if sys.platform != "win32":
 root = Path(__file__).parent.parent
 loris_base = root / "src" / "loris"
 loris_win = root / "src" / "loriswin"
-lib_dir = root / "lib"
+tmp_dir = root / "tmp"
 
 
 def python_arch() -> int:
@@ -40,11 +40,11 @@ def create_cpp_tree(dest):
 def download_fftw(arch=32):
     if arch == 32:
         url = "ftp://ftp.fftw.org/pub/fftw/fftw-3.3.5-dll32.zip"
-        outfile = lib_dir / "fftw32.zip"
+        outfile = tmp_dir / "fftw32.zip"
     else:
         url = "ftp://ftp.fftw.org/pub/fftw/fftw-3.3.5-dll64.zip"
-        outfile = lib_dir / "fftw64.zip"
-    fftw_folder = lib_dir / f"fftw{arch}"
+        outfile = tmp_dir / "fftw64.zip"
+    fftw_folder = tmp_dir / f"fftw{arch}"
     if fftw_folder.exists():
         print(f">> fftw folder already present at {fftw_folder}, skipping")
         return fftw_folder
@@ -78,7 +78,7 @@ def generate_lib_files(fftw_folder: Path, arch=32):
 
 
 create_cpp_tree(loris_win)
-os.makedirs(lib_dir, exist_ok=True)
+os.makedirs(tmp_dir, exist_ok=True)
 fftw_folder = download_fftw(arch)
 generate_lib_files(fftw_folder, arch=arch)
 
