@@ -88,6 +88,12 @@ def generate_lib_files(fftw_folder: Path, arch=32):
         os.system(f"lib.exe /def:{def_file}")
     os.chdir(cwd)
 
+def copy_dlls_in_data_folder(fftw_folder):
+    dlls = Path(fftw_folder).glob("*.dll")
+    data_folder = fftw_folder.parent.parent / "data"
+    os.makedirs(data_folder, exist_ok=True)
+    for dll in dlls:
+        shutil.copy(dll, data_folder)
 
 for d in ["./build",  "./dist", "./*egg-info"]:
     if not os.path.exists(d):
@@ -102,6 +108,10 @@ for d in ["./build",  "./dist", "./*egg-info"]:
 create_cpp_tree(loris_win)
 os.makedirs(tmp_dir, exist_ok=True)
 fftw_folder = download_fftw(arch)
-generate_lib_files(fftw_folder, arch=arch)
+copy_dlls_in_data_folder(fftw_folder)
+if sys.platform == "win32":
+    generate_lib_files(fftw_folder, arch=arch)
+else:
+    print("Not on windows, the .lib files for fftw will not be generated")
 
 print(">> prepare_windows_build: Finished")
