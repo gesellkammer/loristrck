@@ -66,7 +66,8 @@ elif sys.platform == 'win32':
     libs = ["libfftw3-3"]
     assert os.path.exists('src/loriswin')
     include_dis.append('src/loriswin')
-    possible_dirs = ['/src/fftw', '/lib/fftw']
+    # possible_dirs = ['/src/fftw', '/lib/fftw']
+    possible_dirs = []
     loris_base = os.path.join('src', 'loriswin', 'src')
     if python_arch() == 32:
         possible_dirs.append("tmp/fftw32")

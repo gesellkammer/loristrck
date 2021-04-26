@@ -19,3 +19,4 @@ wheelhouse
 *.aiff
 *.flac
 site/
+src/loriswin/
