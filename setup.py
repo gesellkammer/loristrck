@@ -37,6 +37,7 @@ def python_arch() -> int:
 # Mac OSX
 ######################################
 
+package_data = {}
 
 if sys.platform == 'darwin':
     libs = ["m", "fftw3"]
@@ -82,7 +83,7 @@ elif sys.platform == 'win32':
         #  "-DHAVE_CONFIG_H", 
         "-D_USE_MATH_DEFINES",
     ]
-
+    package_data['loristrck'] = ['data/*']
 assert os.path.exists(loris_base)
 
 sources = []
@@ -151,6 +152,8 @@ setup(
         'sounddevice',
         'pysdif3>=0.6.0'
     ],
+    package_data=package_data,
+    include_package_data=bool(package_data),
     
     url='https://github.com/gesellkammer/loristrck',
     download_url='https://github.com/gesellkammer/loristrck',
