@@ -153,7 +153,7 @@ setup(
         'pysdif3>=0.6.0'
     ],
     package_data=package_data,
-    include_package_data=bool(package_data),
+    # include_package_data=bool(package_data),
     
     url='https://github.com/gesellkammer/loristrck',
     download_url='https://github.com/gesellkammer/loristrck',
