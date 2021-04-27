@@ -119,6 +119,7 @@ loris_sources = list(set(loris_sources) - set(loris_exclude))
 sources.extend(loris_sources)
 print("Loris Base: ", loris_base)
 print("Sources:", sources)
+print("Package Data", package_data)
 
 setup(
     name='loristrck',
