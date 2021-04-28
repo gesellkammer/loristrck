@@ -1,0 +1,11 @@
+exclude *.cache
+recursive-include bin *
+recursive-include src/loris
+prune src/loris/doc
+prune src/loris/scripting
+prune src/loris/test
+prune src/loris/utils
+recursive-include docs *
+recursive-include loristrck *.py *.pyx *.pxd
+recursive-include scripts *
+exclude .*
