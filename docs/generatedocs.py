@@ -8,10 +8,12 @@ try:
     from emlib import doctools
 except ImportError:
     import textwrap
-    msg = ("\nWARNING: Trying to update documentation, but the python present in the current environment"
+    msg = ("**WARNING**: Trying to update documentation, but the python present in the current environment"
            " does not have the needed packages (loristrck, emlib). Documentation will not be"
-           " updated\n")
+           " updated")
+    print()
     print("\n".join(textwrap.wrap(msg, width=72)))
+    print()
     sys.exit(0)
 
 
