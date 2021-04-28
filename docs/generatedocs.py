@@ -7,9 +7,11 @@ try:
     from loristrck import util
     from emlib import doctools
 except ImportError:
-    print("\nWARNING: Trying to update documentation, but the python present in the current environment"
-          " does not have the needed packages (loristrck, emlib). Documentation will not be"
-          " updated\n")
+    import textwrap
+    msg = ("\nWARNING: Trying to update documentation, but the python present in the current environment"
+           " does not have the needed packages (loristrck, emlib). Documentation will not be"
+           " updated\n")
+    print("\n".join(textwrap.wrap(msg, width=60)))
     sys.exit(0)
 
 
