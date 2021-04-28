@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-import loristrck as lt
-from loristrck import util
-from emlib import doctools
-from typing import List, Callable
-import io
 import os
 import argparse
-from emlib import doctools
+import sys
+
+try:
+    from loristrck import util
+    from emlib import doctools
+except ImportError:
+    print("Trying to update documentation, but the python present in the current environment"
+          "does not have the needed packages (loristrck, emlib). Documentation will not be"
+          "updated")
+    sys.exit(0)
 
 
 def main(destfolder: str):

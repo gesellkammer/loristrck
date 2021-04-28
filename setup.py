@@ -19,7 +19,7 @@ include_dirs = [
 ]
 
 library_dirs = []
-compile_args = ['-DMERSENNE_TWISTER', 
+compile_args = ['-DMERSENNE_TWISTER',
                 '-DHAVE_FFTW3_H']
 
 
@@ -30,14 +30,15 @@ def append_if_exists(seq, folder):
 
 def python_arch() -> int:
     """ Returns 32 if python is 32-bit, 64 if it is 64-bits"""
-    import struct 
-    return struct.calcsize("P") * 8    
+    import struct
+    return struct.calcsize("P") * 8
 
 #######################################
 # Mac OSX
 ######################################
 
 package_data = {}
+print("Platform", sys.platform)
 
 if sys.platform == 'darwin':
     libs = ["m", "fftw3"]
@@ -50,22 +51,30 @@ if sys.platform == 'darwin':
     compile_args.append("-g")
     compile_args.append("-std=c++11")
     loris_base = os.path.join('src', 'loris', 'src')
-                    
-elif sys.platform == 'linux2':
+
+elif sys.platform == 'linux':
     libs = ["m", "fftw"]
-        
+
     os.environ['CC'] = "ccache gcc"
     compile_args.append("-g")
     compile_args.append("-std=c++11")
     include_dirs.append('src/loris')
     loris_base = os.path.join('src', 'loris', 'src')
-    
+
 ######################################
 # Windows
 ######################################
 elif sys.platform == 'win32':
+    assert os.path.exists('src/loriswin'), (
+        "Source files for windows not found. From a 'Developer Command Prompt' "
+        "run scripts/prepare_windows_build.py first")
+
+    assert os.path.exists('loristrck/data/libfftw3-3.dll'), (
+        "fftw dll not found. Run scripts/prepare_windows_build.py first"
+        ". Make sure to run that from a terminal in which lib.exe is in the path"
+        " (for example, from a 'Developer Powershell...')")
+
     libs = ["libfftw3-3"]
-    assert os.path.exists('src/loriswin')
     include_dirs.append('src/loriswin')
     # possible_dirs = ['/src/fftw', '/lib/fftw']
     possible_dirs = []
@@ -79,8 +88,8 @@ elif sys.platform == 'win32':
         append_if_exists(library_dirs, folder)
     # compile_args.append("-march-i686")
     compile_args += [
-        "/std:c++14",              
-        #  "-DHAVE_CONFIG_H", 
+        "/std:c++14",
+        #  "-DHAVE_CONFIG_H",
         "-D_USE_MATH_DEFINES",
     ]
     package_data['loristrck'] = ['data/*']
@@ -110,7 +119,7 @@ _exclude = [
     "Harmonifier",
     "Collator",
     "lorisException_pi"
-] 
+]
 loris_exclude = []
 loris_exclude += [os.path.join(loris_base, f) + ".C" for f in _exclude]
 loris_exclude += [os.path.join(loris_base, f) + ".cpp" for f in _exclude]
@@ -129,7 +138,7 @@ setup(
             'loristrck._core',
             sources=sources + ['loristrck/_core.pyx'],
             # sources=sources + ['loristrck/_core.cpp'],
-                        
+
             depends=loris_headers,
             include_dirs=include_dirs + [get_numpy_include()],
             libraries=libs,
@@ -155,7 +164,7 @@ setup(
     ],
     package_data=package_data,
     # include_package_data=bool(package_data),
-    
+
     url='https://github.com/gesellkammer/loristrck',
     download_url='https://github.com/gesellkammer/loristrck',
     license='GPL',
@@ -164,5 +173,5 @@ setup(
     platforms=['Linux', 'Mac OS-X', 'Windows'],
     version=VERSION,
     description="A wrapper around the partial-tracking library Loris",
-    long_description=open("README.rst").read()            
+    long_description=open("README.rst").read()
 )

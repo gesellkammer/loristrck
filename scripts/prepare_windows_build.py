@@ -2,7 +2,6 @@
 import os
 import shutil
 import glob
-import argparse
 from pathlib import Path
 import sys
 import urllib.request as request
@@ -14,35 +13,55 @@ if sys.platform != "win32":
     print("This script is only needed in windows")
     # sys.exit(0)
 
+if not shutil.which("lib.exe"):
+    print("lib.exe is not in the path. Run this script inside a"
+          "'Developer Command Prompt for Visual Studio' or a"
+          "'Developer Powershell...'. In both cases Visual Studio should"
+          "be installed")
 
 root = Path(__file__).parent.parent
-print("Root: ", root)
 loris_base = root / "src" / "loris"
-print("Loris base: ", loris_base)
 loris_win = root / "src" / "loriswin"
 tmp_dir = root / "tmp"
+
+print("Root: ", root)
+print("Loris base: ", loris_base)
 print("tmp dir: ", tmp_dir)
 
 
 def python_arch() -> int:
     """ Returns 32 if python is 32-bit, 64 if it is 64-bits"""
-    import struct 
-    return struct.calcsize("P") * 8    
+    import struct
+    return struct.calcsize("P") * 8
 
 
 arch = python_arch()
+assert arch == 32 or arch == 64
 
 
-def create_cpp_tree(dest):
+def create_cpp_tree(dest, force=False):
     if os.path.exists(dest):
-        shutil.rmtree(dest)
+        if not force:
+            print(f"{dest} already exists, skipping")
+            return
+        else:
+            shutil.rmtree(dest)
     shutil.copytree(loris_base, dest, dirs_exist_ok=True)
     cfiles = glob.glob(os.path.join(dest, 'src', '*.C'))
     for cfile in cfiles:
         os.rename(cfile, os.path.splitext(cfile)[0] + ".cpp")
 
 
-def download_fftw(arch=32):
+def zip_extract(zfile, outfolder):
+    outfolder = os.path.abspath(outfolder)
+    print(f"Extracting {zfile} to {outfolder}")
+    if os.path.exists(outfolder):
+        shutil.rmtree(outfolder)
+    with zipfile.ZipFile(zfile, 'r') as z:
+        z.extractall(outfolder)
+
+
+def download_fftw(arch):
     if arch == 32:
         url = "ftp://ftp.fftw.org/pub/fftw/fftw-3.3.5-dll32.zip"
         outfile = tmp_dir / "fftw32.zip"
@@ -60,17 +79,8 @@ def download_fftw(arch=32):
             shutil.copyfileobj(r, f)
     print(f">> Saved fftw to {outfile}")
     zip_extract(outfile, fftw_folder)
-    
-    return fftw_folder    
 
-
-def zip_extract(zfile, outfolder):
-    outfolder = os.path.abspath(outfolder)
-    print(f"Extracting {zfile} to {outfolder}")
-    if os.path.exists(outfolder):
-        shutil.rmtree(outfolder)
-    with zipfile.ZipFile(zfile, 'r') as z:
-        z.extractall(outfolder)
+    return fftw_folder
 
 
 def generate_lib_files(fftw_folder: Path, arch=32):
@@ -85,30 +95,29 @@ def generate_lib_files(fftw_folder: Path, arch=32):
     machine = "x86" if arch == 32 else "x64"
     for def_file in def_files:
         os.system(f"lib.exe /machine:{machine} /def:{def_file}")
-        # os.system(f"lib.exe /def:{def_file}")
     os.chdir(cwd)
 
-def copy_dlls_in_data_folder(fftw_folder):
-    dlls = Path(fftw_folder).glob("*.dll")
-    data_folder = fftw_folder.parent.parent / "data"
-    os.makedirs(data_folder, exist_ok=True)
-    for dll in dlls:
-        shutil.copy(dll, data_folder)
 
-for d in ["./build",  "./dist", "./*egg-info"]:
-    if not os.path.exists(d):
-        continue
-    if os.path.isdir(d):
-        print(f">> Removing dir {d}")
-        shutil.rmtree(d)
-    else:
-        print(f">> Removing file {d}")
-        os.remove(d)
-
+# In windows, setuptools seems to need the extensions to be .cpp even
+# if language is set to c++. The loris sources use .C for c++ files,
+# so instead of modifying the loris tree we create a new tree with
+# files renamed to .cpp
 create_cpp_tree(loris_win)
+
+# Create tmp dir to download the fftw dll binaries
 os.makedirs(tmp_dir, exist_ok=True)
 fftw_folder = download_fftw(arch)
-copy_dlls_in_data_folder(fftw_folder)
+
+# The data folder is part of the distributed files and will
+# store the fftw .dll
+data_folder = fftw_folder.parent.parent / "loristrck/data"
+os.makedirs(data_folder, exist_ok=True)
+fftwdll = fftw_folder / "libfftw3-3"
+assert fftwdll.exists()
+# We copy the .dll file for runtime
+shutil.copy(fftwdll, data_folder)
+
+# The .lib files are needed for building
 if sys.platform == "win32":
     generate_lib_files(fftw_folder, arch=arch)
 else:
