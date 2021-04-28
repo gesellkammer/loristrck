@@ -11,7 +11,7 @@ except ImportError:
     msg = ("\nWARNING: Trying to update documentation, but the python present in the current environment"
            " does not have the needed packages (loristrck, emlib). Documentation will not be"
            " updated\n")
-    print("\n".join(textwrap.wrap(msg, width=60)))
+    print("\n".join(textwrap.wrap(msg, width=72)))
     sys.exit(0)
 
 
