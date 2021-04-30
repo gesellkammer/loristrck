@@ -35,6 +35,11 @@ def python_arch() -> int:
     return struct.calcsize("P") * 8
 
 
+def ls(folder=None):
+    for f in os.listdir(str(folder)):
+        print(f)
+
+
 arch = python_arch()
 assert arch == 32 or arch == 64
 
@@ -91,6 +96,8 @@ def generate_lib_files(fftw_folder: Path, arch=32):
     def_files = Path(".").glob("libfftw3*.def")
     libexe = shutil.which("lib.exe")
     if libexe is None:
+        print("PATH: ")
+        print(os.getenv("PATH"))
         raise RuntimeError("lib.exe should be in the path")
     machine = "x86" if arch == 32 else "x64"
     for def_file in def_files:
@@ -113,7 +120,11 @@ fftw_folder = download_fftw(arch)
 data_folder = fftw_folder.parent.parent / "loristrck/data"
 os.makedirs(data_folder, exist_ok=True)
 fftwdll = fftw_folder / "libfftw3-3"
-assert fftwdll.exists()
+if not fftwdll.exists():
+    print(f"Did not find {fftwdll}, but it does not exist")
+    ls(fftw_folder)
+    sys.exit(-1)
+
 # We copy the .dll file for runtime
 shutil.copy(fftwdll, data_folder)
 
