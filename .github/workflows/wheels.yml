@@ -47,6 +47,8 @@ jobs:
             python -m pip install cibuildwheel==1.10.0 twine virtualenv
 
       - name: Build wheels
+        env: 
+          CIBW_SKIP: "*win32*"
         run: |
             # python setup.py build_ext
             python -m cibuildwheel --output-dir wheelhouse
