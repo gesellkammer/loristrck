@@ -46,9 +46,11 @@ jobs:
 
       - name: Build wheels
         env: 
-          CIBW_SKIP: "*win32*"
+          CIBW_SKIP: "cp38-win* *win32"
+          
         run: |
             # python setup.py build_ext
+            python -m cibuildwheel --print-build-identifiers
             python -m cibuildwheel --output-dir wheelhouse
       - uses: actions/upload-artifact@v2
         with:
