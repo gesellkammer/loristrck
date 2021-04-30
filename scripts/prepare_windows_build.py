@@ -51,7 +51,7 @@ def create_cpp_tree(dest, force=False):
             return
         else:
             shutil.rmtree(dest)
-    shutil.copytree(loris_base, dest, dirs_exist_ok=True)
+    shutil.copytree(loris_base, dest)
     cfiles = glob.glob(os.path.join(dest, 'src', '*.C'))
     for cfile in cfiles:
         os.rename(cfile, os.path.splitext(cfile)[0] + ".cpp")
