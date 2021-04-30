@@ -96,7 +96,6 @@ def generate_lib_files(fftw_folder: Path, arch=32):
     def_files = Path(".").glob("libfftw3*.def")
     libexe = shutil.which("lib.exe")
     if libexe is None:
-        print("PATH: ")
         print(os.getenv("PATH"))
         raise RuntimeError("lib.exe should be in the path")
     machine = "x86" if arch == 32 else "x64"
@@ -119,7 +118,7 @@ fftw_folder = download_fftw(arch)
 # store the fftw .dll
 data_folder = fftw_folder.parent.parent / "loristrck/data"
 os.makedirs(data_folder, exist_ok=True)
-fftwdll = fftw_folder / "libfftw3-3"
+fftwdll = fftw_folder / "libfftw3-3.dll"
 if not fftwdll.exists():
     print(f"Did not find {fftwdll}, but it does not exist")
     ls(fftw_folder)
