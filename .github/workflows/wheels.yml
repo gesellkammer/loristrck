@@ -30,16 +30,14 @@ jobs:
             brew install fftw
             brew install libsndfile
 
-      - name: Windows - Enable Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@v1.7.0    
+      #- name: Windows - Enable Developer Command Prompt
+      #  uses: ilammy/msvc-dev-cmd@v1.7.0    
 
       - name: Prepare build in windows
-        # uses: ilammy/msvc-dev-cmd@v1         
         if: runner.os == 'windows'
         run: |
-            dir
             choco install libsndfile
-            python scripts/prepare_windows_build.py
+            # python scripts/prepare_windows_build.py
             dir
             
       - name: Install cibuildwheel
