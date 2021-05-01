@@ -4,7 +4,7 @@ import sys
 if sys.platform != "win32":
     print("This script is supposed to run in windows.")
     sys.exit(-1)
-    
+
 assert os.path.exists("setup.py"), "This script should be called at the package's root"
 
 HOME = os.getenv("HOME")
@@ -14,7 +14,7 @@ py39_32 = f"{HOME}\\AppData\\Local\\Programs\\Python\\Python39-32"
 py38_64 = f"{HOME}\\AppData\\Local\\Programs\\Python\\Python38"
 py38_32 = f"{HOME}\\AppData\\Local\\Programs\\Python\\Python38-32"
 
-pyversions = [py39_64, py39_32, py_38_64, py38_32]
+pyversions = [py39_64, py39_32, py38_64, py38_32]
 
 os.makedirs("wheelhouse", exist_ok=True)
 
