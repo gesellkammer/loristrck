@@ -2,6 +2,7 @@ import os
 import sys
 import glob
 from setuptools import setup, Extension
+import shutil
 
 VERSION = '1.2.3'
 
@@ -13,6 +14,7 @@ class get_numpy_include(str):
 # -----------------------------------------------------------------------------
 # Global
 # -----------------------------------------------------------------------------
+
 
 include_dirs = [
     'loristrck'
@@ -53,9 +55,9 @@ if sys.platform == 'darwin':
     loris_base = os.path.join('src', 'loris', 'src')
 
 elif sys.platform == 'linux':
-    libs = ["m", "fftw"]
-
-    os.environ['CC'] = "ccache gcc"
+    libs = ["m", "fftw3"]
+    if shutil.which("ccache"):
+        os.environ['CC'] = "ccache gcc"
     compile_args.append("-g")
     compile_args.append("-std=c++11")
     include_dirs.append('src/loris')
