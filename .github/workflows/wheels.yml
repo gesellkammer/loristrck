@@ -19,25 +19,23 @@ jobs:
       - uses: actions/checkout@v2
 
       # Used to host cibuildwheel
-      - name: Setup python ${{ matrix.python-version }}
+      - name: Setup python
         uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-
+        
       - name: Install dependencies macos
         if: runner.os == 'macos'
         run: |
             brew install fftw
             brew install libsndfile
 
-      #- name: Windows - Enable Developer Command Prompt
-      #  uses: ilammy/msvc-dev-cmd@v1.7.0    
+      - name: Windows - Enable Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1.7.0    
 
       - name: Prepare build in windows
         if: runner.os == 'windows'
         run: |
             choco install libsndfile
-            # python scripts/prepare_windows_build.py
+            python scripts/prepare_windows_build.py
             dir
             
       - name: Install cibuildwheel
