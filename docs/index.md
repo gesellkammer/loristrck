@@ -93,26 +93,10 @@ lt.partials_render(selected, outfile="stretched.wav")
 
 ## Installation
 
-The source of **loristrck** is hosted at <https://github.com/gesellkammer/loristrck/>
-
-**loristrck** currently needs **python >= 3.8**. For all platforms a working compil
-
-### Dependencies
-
-**loristrck** depends on the following external libraries:
-
-* `fftw`
-* `libsndfile` 
-
-----
-
 ### macOS
-
-To install **loristrck** and all its dependencies:
 
 ```bash
 brew install fftw
-brew install libsndfile
 pip install loristrck
 ```
 
@@ -131,15 +115,7 @@ pip install loristrck
 
 ### Windows
 
-* Install ``libsndfile`` from http://www.mega-nerd.com/libsndfile/#Download
-* Install ``fftw3`` from http://www.fftw.org/install/windows.html
-* Unzip to a directory of your choicc (suggestion: ``C:\\src``). You should have a folder ``C:\\src\\fftw`` 
-* Put that directory in your PATH (Control Panel/System/Advanced/Environmental Variables/)
-
 ```
 pip install loristrck
-
 ```
-
-The ``loris`` library is included and compiled into the cython bindings. 
 
