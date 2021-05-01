@@ -682,7 +682,7 @@ def matrix_save(data: np.ndarray, outfile: str, bits=32, header=True, metadata=T
 
     !!! note: file format
 
-    The `mtx` is an ad-hoc format where a .wav format is used to store binary
+    The `mtx` is an ad-hoc format where a float-32 wav file is used to store binary
     data. This .wav file is not a real soundfile but it turns out that the .wav format
     is very useful for saving binary data (it is endiannes independent,
     it supports some limited metadata and is widely supported)
@@ -694,7 +694,7 @@ def matrix_save(data: np.ndarray, outfile: str, bits=32, header=True, metadata=T
     Args:
         data: a 2D-matrix as returned by `partials_sample`
         outfile: the path to the resulting output file. The format should be
-            .wav or .npy
+            .mtx or .npy
         bits: 32 or 64. 32 bits should be enough
         header: if True, a header is included with the format `[dataOffset, numcols,
             numrows]`
@@ -713,7 +713,7 @@ def matrix_save(data: np.ndarray, outfile: str, bits=32, header=True, metadata=T
         tracks = lt.pack(partials)
         dt = 64/44100
         m = lt.partials_sample(tracks, dt)
-        matrix_save(m, "out.wav")
+        matrix_save(m, "out.mtx")
     ```
     """
     fmt = os.path.splitext(outfile)[1]
@@ -767,7 +767,7 @@ def partials_save_matrix(partials: List[np.ndarray], outfile: str, dt: float = N
     import loristrck as lt
     partials, labels = lt.read_sdif(sdiffile)
     selected, rest = lt.util.select(partials, minbps=2, mindur=0.005, minamp=-80)
-    lt.util.partials_save_matrix(selected, 0.002, "packed.wav")
+    lt.util.partials_save_matrix(selected, 0.002, "packed.mtx")
 
     ```
     

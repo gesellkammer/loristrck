@@ -764,7 +764,7 @@ def partials_save_matrix(partials: list[np.ndarray], outfile: str,
 import loristrck as lt
 partials, labels = lt.read_sdif(sdiffile)
 selected, rest = lt.util.select(partials, minbps=2, mindur=0.005, minamp=-80)
-lt.util.partials_save_matrix(selected, 0.002, "packed.wav")
+lt.util.partials_save_matrix(selected, 0.002, "packed.mtx")
 
 ```
 
