@@ -1,5 +1,6 @@
 import os
 import sys
+import pathlib
 
 if sys.platform != "win32":
     print("This script is supposed to run in windows.")
@@ -7,7 +8,7 @@ if sys.platform != "win32":
 
 assert os.path.exists("setup.py"), "This script should be called at the package's root"
 
-HOME = os.getenv("HOME")
+HOME = str(pathlib.Path.home())
 
 py39_64 = f"{HOME}\\AppData\\Local\\Programs\\Python\\Python39"
 py39_32 = f"{HOME}\\AppData\\Local\\Programs\\Python\\Python39-32"
