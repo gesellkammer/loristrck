@@ -18,7 +18,7 @@ parser.add_argument("--transposition", default=0, type=float, help="transpositio
 parser.add_argument("-o", "--out", default="dac", 
                     help="Play / Save the samples. Use dac to play in realtime, or a .wav "
                          "of .aif path to synthesize to that file")
-parser.add_argument("inputfile", help="A .sdif or .mtx.wav file (as generated via loristrck_pack")
+parser.add_argument("inputfile", help="A .sdif or .mtx file (as generated via loristrck_pack")
 args = parser.parse_args()
 
 
@@ -66,7 +66,7 @@ def csound_in_path():
 def play_mtx(wavfile, out, speed=1, gain=1, freqscale=1, saveas=''):
     import string
     if not csound_in_path():
-        print("csound should be installed in order to play a .mtx.wav file", file=sys.stderr)
+        print("csound should be installed in order to play a .mtx file", file=sys.stderr)
         sys.exit(-1)
     template = string.Template("""
 <CsoundSynthesizer>
@@ -132,8 +132,8 @@ schedule 1, 0, -1
 ext = os.path.splitext(args.inputfile)[1].lower()
 if ext == '.sdif':
     play_sdif(args.inputfile, out=args.out, speed=args.speed, transposition=args.transposition)
-elif ext == '.wav':
+elif ext == '.mtx':
     play_mtx(args.inputfile, out=args.out, speed=args.speed, freqscale=loristrck.i2r(args.transposition))
 else:
-    print("Input should be a sdif file or a packed matrix (mtx.wav)", file=sys.stderr)
+    print("Input should be a sdif file or a packed matrix (.mtx)", file=sys.stderr)
     sys.exit(-1)

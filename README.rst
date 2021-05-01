@@ -35,25 +35,17 @@ https://loristrck.readthedocs.io
 Installation
 ============
 
-External Dependencies
----------------------
-
-* fftw
-* libsndfile
-
-
-Install in macOS
-----------------
+macOS
+-----
 
 ::
 
     brew install fftw
-    brew install libsndfile
     pip install loristrck
 
 
-Install in Linux
-----------------
+Linux
+-----
 
 ::
 
@@ -61,30 +53,27 @@ Install in Linux
     pip install loristrck
 
 
-Install in Windows
-------------------
+Windows
+-------
 
-There are no prebuilt binary wheels for windows.
+::
 
-* Install ``libsndfile`` from http://www.mega-nerd.com/libsndfile/#Download
-* Install ``fftw3`` from http://www.fftw.org/install/windows.html
-* Download the 32-bit binary package. Unzip to a directory of your choice. 
-  Suggestion: ``C:\\src``. You should have then a folder ``C:\\src\\fftw`` 
-* Put that directory in your PATH (Control Panel/System/Advanced/Environmental Variables/)
-
-At the command line do::
-
-  git clone https://github.com/gesellkammer/loristrck 
-  cd loristrck
-  python setup.py install -LC:\\my\\path\\to\\fftw
+    pip install loristrck
 
 
-Otherwise, install it via pip::
+Install from source in Windows
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   pip install numpy cython
-   pip install loristrck
+You need to have Visual Studio installed
 
-(this assumes that you put the fftw3 source under ``C:\\src``)
+::
+
+    # From a Developer Powershell
+    python scripts/prepare_windows_build.py
+
+    # From a normal prompt
+    pip install .
+
 
 
 Usage
