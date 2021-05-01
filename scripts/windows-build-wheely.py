@@ -1,6 +1,7 @@
 import os
 import sys
 import pathlib
+import shutil
 
 if sys.platform != "win32":
     print("This script is supposed to run in windows.")
@@ -28,4 +29,4 @@ for py in pyversions:
     os.system(f"{pyexe} setup.py bdist_wheel -d wheelhouse")
 
 print("Uploading")
-os.system("twine upload --skip-exising wheelhouse\\*.whl")
+os.system("twine upload --skip-existing wheelhouse\\*.whl")

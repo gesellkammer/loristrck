@@ -4,7 +4,7 @@ prune bin/.mypy_cache
 
 prune docs 
 
-recursive-include src/loris
+recursive-include src/loris *
 prune src/loris/doc
 prune src/loris/scripting
 prune src/loris/test
