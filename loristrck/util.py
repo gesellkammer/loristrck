@@ -40,6 +40,7 @@ __all__ = [
     "partial_energy",
     "select",
     "filter",
+    "sndread",
     "sndreadmono",
     "sndwrite",
     "plot_partials",
@@ -51,8 +52,7 @@ __all__ = [
     "partials_render",
     "estimate_sampling_interval",
     "pack",
-    "partials_save_matrix",
-   
+    "partials_save_matrix"
 ]
 
 
@@ -673,19 +673,31 @@ def loudest(partials: List[np.ndarray], N: int = 0) -> List[np.ndarray]:
     return sorted_partials
 
 
-def matrix_save(data: np.ndarray, outfile: str, bits=32, header=True, metadata=True
-                ) -> None:
+def matrix_save(data: np.ndarray, outfile: str, bits=32, metadata:Dict[str, Any]=None) -> None:
     """
     Save the raw data mtx.
 
     The data is saved either as a `.mtx` or as a `.npy` file.
 
-    !!! note: file format
+    ## The mtx file format
 
     The `mtx` is an ad-hoc format where a float-32 wav file is used to store binary
-    data. This .wav file is not a real soundfile but it turns out that the .wav format
-    is very useful for saving binary data (it is endiannes independent,
-    it supports some limited metadata and is widely supported)
+    data. This .wav file is not a real soundfile, it is used as a binary storage
+    format. A header is always included, with the data `[headerSize, numRows, numColumns, ...]`
+    **headerSize** indicates the offset where the data starts. The data itself is saved flat,
+    starting at that offset. To reconstruct in python, do:
+
+    ```python
+
+    import loristrck as lt
+    # discard sr, it has no meaning in this context
+    raw, _ = lt.sndread("mydata.mtx")
+    datastart = raw[0]
+    numrows = raw[1]
+    numcols = raw[2]
+    data = raw[datastart:]
+    data.shape = (numrows, numcols)
+    ```
 
     The `.npy` format is defined by numpy here:
     <https://numpy.org/doc/stable/reference/generated/numpy.lib.format.html#module-numpy
@@ -696,42 +708,55 @@ def matrix_save(data: np.ndarray, outfile: str, bits=32, header=True, metadata=T
         outfile: the path to the resulting output file. The format should be
             .mtx or .npy
         bits: 32 or 64. 32 bits should be enough
-        header: if True, a header is included with the format `[dataOffset, numcols,
-            numrows]`
-        metadata: If True, metadata is included which duplicates the
-            data of the header in string form.
-
-    The data `mt` is a 2D numpy array. It is written as a flat array after
-    the header
+        metadata: if given, it is included in the wav metadata and all numeric 
+            values are included in the data itself
+        
+    The data `data` is a 1D or a 2D numpy array. 
 
     ### Example
 
     ```python
     
-        import loristrck as lt
-        partials = lt.read_sdif(path_to_sdif)
-        tracks = lt.pack(partials)
-        dt = 64/44100
-        m = lt.partials_sample(tracks, dt)
-        matrix_save(m, "out.mtx")
+    import loristrck as lt
+    partials = lt.read_sdif(path_to_sdif)
+    tracks = lt.pack(partials)
+    dt = 64/44100
+    m = lt.partials_sample(tracks, dt)
+    matrix_save(m, "out.mtx")
     ```
     """
     fmt = os.path.splitext(outfile)[1]
     if fmt == '.mtx':
         f = _wavwriter(outfile, sr=44100, bits=bits)
-        numrows, numcols = data.shape
+        if len(data.shape) == 1:
+            numrows, numcols = data.shape[0], 1
+        else:
+            numrows, numcols = data.shape
+        header = [3, numrows, numcols]
+        d = {'headerSize': 3, 
+             'numRows': numrows, 
+             'numColumns': numcols}
         if metadata:
-            metastr = b"HeaderLength=%d, NumCols=%d, NumRows=%d"%(2, numcols, numrows)
-            f.comment = metastr
-            f.software = "loristrck"
-        if header:
-            header_array = np.array([2, numcols, numrows], dtype=float)
-            f.write(header_array)
+            for key, value in metadata.items():
+                if isinstance(value, (int, float)):
+                    header.append(value)
+                    d[key] = str("%.12g" % value)
+                elif isinstance(value, str):
+                    d[key] = f"'{value}'"
+                else:
+                    raise TypeError(f"Metadata values should be int, float or str, got {type(value)}")
+            header[0] = d['headerSize'] = len(header)
+        f.comment = ", ".join(f"{key}:{value}" for key, value in d.items())
+        f.software = "loristrck"
+        header_array = np.array(header, dtype=float)
+        f.write(header_array)
         mflat = data.ravel()
         f.write(mflat)
         f.close()
     elif fmt == '.npy':
         np.save(outfile, data, allow_pickle=False)
+    elif fmt == '.wav':
+        raise ValueError("The .wav extension is discouraged")
     else:
         raise ValueError(f"Format {fmt} not recognized")
 
@@ -800,14 +825,36 @@ def partials_save_matrix(partials: List[np.ndarray], outfile: str, dt: float = N
     if dt is None:
         dt = estimate_sampling_interval(partials)
     assert all(isinstance(p, np.ndarray) for p in partials)
-    tracks, rest = pack(partials, gap=dt*gapfactor, maxtracks=maxtracks)
+    gap = dt*gapfactor
+    tracks, rest = pack(partials, gap=gap, maxtracks=maxtracks)
     mtx = partials_sample(tracks, dt=dt, maxactive=maxactive)
-    matrix_save(mtx, outfile, bits=32)
+    matrix_save(mtx, outfile, bits=32, metadata={'dt': dt, 'numTracks': len(tracks), 'gap': gap, 'maxactive': maxactive})
     return tracks, mtx
 
 
 def _numchannels(samples: np.ndarray) -> int:
     return 1 if samples.ndim == 1 else samples.shape[1]
+
+
+def sndread(path: str, contiguous=True
+            ) -> Tuple[np.ndarray, int]:
+    """
+    Read a sound file. 
+
+    Args:
+        path: The path to the soundfile
+        chan: The channel to return if the file is multichannel
+        contiguous: If True, it is ensured that the returned array 
+            is contiguous. This should be set to True if the samples are to be
+            passed to `analyze`, which expects a contiguous array
+
+    Returns:
+        a tuple (samples:np.ndarray, sr:int)
+    """
+    samples, sr = soundfile.read(path)
+    if contiguous:
+        samples = np.ascontiguousarray(samples)
+    return samples, sr
 
 
 def sndreadmono(path: str, chan: int = 0, contiguous=True
@@ -1253,8 +1300,6 @@ def partials_render(partials: List[np.ndarray], outfile: str, sr=44100,
         end: end time to render (default: end time of spectrum)
         encoding: if given, the encoding to use
 
-    Returns:
-        the path to the oufile written
     """
     samples = _core.synthesize(partials,
                                samplerate=sr,
