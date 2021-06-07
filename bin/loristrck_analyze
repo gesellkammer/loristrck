@@ -35,7 +35,7 @@ parser.add_argument("sndfile")
 
 args = parser.parse_args()
 
-samples, sr = loristrck.sndreadmono(args.sndfile)
+samples, sr = loristrck.util.sndreadmono(args.sndfile)
 
 if args.hoptime:
     hoptime = args.hoptime
@@ -55,7 +55,7 @@ partials = loristrck.analyze(samples, sr=sr,
                              croptime=args.croptime,
                              residuebw=args.residuebw)
 
-partials, rest = loristrck.select(partials, minamp=args.minamp, minbps=args.minbps, mindur=args.mindur)
+partials, rest = loristrck.util.select(partials, minamp=args.minamp, minbps=args.minbps, mindur=args.mindur)
 
 if args.outfile is None:
     outfile = os.path.splitext(args.sndfile)[0] + ".sdif"
@@ -65,6 +65,7 @@ else:
 sdiftype = args.sdiftype.lower()
 assert sdiftype in ('1trc', 'rbep')
 
-loristrck.write_sdif(partials, outfile, rbep=sdiftype=='rbep', fadetime=args.fadetime)
+
+loristrck.write_sdif(partials, outfile, fmt=sdiftype, fadetime=args.fadetime)
 
 print(outfile)

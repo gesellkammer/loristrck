@@ -487,7 +487,8 @@ def partials_sample(partials: List[np.ndarray], dt=0.002, t0: float = -1, t1: fl
             # Extract columns: freq, amp, bw (freq is now index 0, because
             # the resampled partial has no times column)
             cols.append(p_resampled[:, (0, 1, 3)])
-        m = np.hstack(cols)
+        # m = np.hstack(cols)
+        m = np.column_stack(cols)
         if maxactive > 0:
             _limit_matrix_interleaved(m, maxactive)
         return m
@@ -727,7 +728,7 @@ def matrix_save(data: np.ndarray, outfile: str, bits=32, metadata:Dict[str, Any]
     """
     fmt = os.path.splitext(outfile)[1]
     if fmt == '.mtx':
-        f = _wavwriter(outfile, sr=44100, bits=bits)
+        f = _wavwriter(outfile, sr=44100, bits=bits, fmt='wav')
         if len(data.shape) == 1:
             numrows, numcols = data.shape[0], 1
         else:
@@ -761,13 +762,17 @@ def matrix_save(data: np.ndarray, outfile: str, bits=32, metadata:Dict[str, Any]
         raise ValueError(f"Format {fmt} not recognized")
 
 
-def _wavwriter(outfile, sr=44100, bits=32, channels=1):
+def _wavwriter(outfile, sr=44100, bits=32, channels=1, fmt:str=None):
+    """ Creates a soundfile.SoundFile with float32 or float64 format """
+
     assert bits in (32, 64)
-    ext = os.path.splitext(outfile)[1][1:][:3].lower()
-    assert ext in ('wav', 'aif')
+    if fmt is None:
+        fmt = os.path.splitext(outfile)[1][1:].lower()
+
+    assert fmt in ('wav', 'aif')
     subtype = 'FLOAT' if bits == 32 else 'DOUBLE'
     return soundfile.SoundFile(outfile, mode="w", samplerate=sr, channels=channels,
-                               subtype=subtype)
+                               format=fmt, subtype=subtype)
 
 
 def wavwrite(outfile, samples, sr=44100, bits=32):
@@ -828,7 +833,7 @@ def partials_save_matrix(partials: List[np.ndarray], outfile: str, dt: float = N
     gap = dt*gapfactor
     tracks, rest = pack(partials, gap=gap, maxtracks=maxtracks)
     mtx = partials_sample(tracks, dt=dt, maxactive=maxactive)
-    matrix_save(mtx, outfile, bits=32, metadata={'dt': dt, 'numTracks': len(tracks), 'gap': gap, 'maxactive': maxactive})
+    matrix_save(mtx, outfile, bits=32, metadata={'dt': dt, 'numTracks': len(tracks), 'gap': gap, 'maxActive': maxactive})
     return tracks, mtx
 
 
@@ -1523,9 +1528,10 @@ def write_sdif(partials: List[np.ndarray], outfile: str, labels=None, fmt="RBEP"
         fmt: one of "RBEP" / "1TRC"
        
     """
-    if fmt == "RBEP":
+    fmt = fmt.lower()
+    if fmt == "rbep":
         _write_sdif_rbep(partials, outfile, labels=labels)
-    elif fmt == "1TRC":
+    elif fmt == "1trc":
         _write_sdif_1trc(partials, outfile, labels=labels)
         # _core._write_sdif(partials, outfile, labels=labels, rbep=rbep, fadetime=fadetime)
     else:
