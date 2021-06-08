@@ -363,6 +363,33 @@ def filter(partials: list[np.ndarray], mindur: float = 0.0, mindb: int = -120,
 
 ----------
 
+## sndread
+
+
+Read a sound file.
+
+
+```python
+
+def sndread(path: str, contiguous: bool = True) -> tuple[np.ndarray, int]
+
+```
+
+
+
+**Args**
+
+* **path** (`str`): The path to the soundfile
+* **contiguous** (`bool`): If True, it is ensured that the returned array
+    is contiguous. This should be set to True if the samples are to be
+    passed to `analyze`, which expects a contiguous array (default: True)
+
+**Returns**
+
+&nbsp;&nbsp;&nbsp;&nbsp;(`Tuple[np.ndarray, int]`) a tuple (samples:np.ndarray, sr:int)
+
+----------
+
 ## sndreadmono
 
 
@@ -644,10 +671,6 @@ def partials_render(partials: list[np.ndarray], outfile: str, sr: int = 44100,
 * **end** (`float`): end time to render (default: end time of spectrum)
     (default: -1.0)
 * **encoding** (`str`): if given, the encoding to use (default: None)
-
-**Returns**
-
-&nbsp;&nbsp;&nbsp;&nbsp;(`None`) the path to the oufile written
 
 ----------
 
