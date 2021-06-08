@@ -107,24 +107,37 @@ optional arguments
 
 -----
 
-## loristrck_play
+## loristrck_synth
+
+Synthesize a .sdif or .mtx file
+
+A `.sdif` file is the result of performing analysis, and can be any RBEP or 1TRC sdif file,
+as produced, for example, via loristrck_analyze
+
+A `.mtx` file is a packed spectrum, where partials are packed in non-simultaneous tracks
+to produce facilitate playback. See `loristrck_pack` for more information
 
 ```bash
 
-usage: loristrck_play [OPTIONS] inputfile
+usage: loristrck_synth [-h] [--speed SPEED] [--transposition TRANSPOSITION] [--noise {uniform,gaussian}]
+                       [--quality QUALITY] [-o OUT]
+                       inputfile
 
 positional arguments:
-  inputfile             A .sdif or .mtx file (as generated via loristrck_pack)
+  inputfile             A .sdif or .mtx file (as generated via loristrck_pack
 
 optional arguments:
   -h, --help            show this help message and exit
-  
-  --speed SPEED         Playback speed
+  --speed SPEED         Playback speed. Pitch is not modified
   --transposition TRANSPOSITION
-                        transposition in semitones
-
-  -o OUT, --out OUT     Play / Save the samples. Use dac to play in realtime, or a 
-                        .wav of .aif path to synthesize to that file
+                        Transposition in semitones (independent from playback speed)
+  --noise {uniform,gaussian}
+                        Noise type used for the residual part when synthesizing a .mtx file. The original
+                        implementation uses gaussian noise
+  --quality QUALITY     Oscillator quality when playing a .mtx file. 0: fast, 1: fast + freq. interpolation, 2:
+                        linear interpolation, 3: linear interpolation + freq. interpolation
+  -o OUT, --out OUT     Play / Save the samples. Use dac to play in realtime (.mtx files only), or a .wav of .aif
+                        path to synthesize to that file
 
 ```
 

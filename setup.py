@@ -150,7 +150,7 @@ setup(
         )
     ],
     packages=['loristrck'],
-    scripts=['bin/loristrck_analyze', 'bin/loristrck_pack', 'bin/loristrck_play',
+    scripts=['bin/loristrck_analyze', 'bin/loristrck_pack', 'bin/loristrck_synth',
              'bin/loristrck_chord'],
     setup_requires=[
         'numpy>=1.8',
