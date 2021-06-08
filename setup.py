@@ -4,7 +4,7 @@ import glob
 from setuptools import setup, Extension
 import shutil
 
-VERSION = '1.3.0'
+VERSION = '1.4.0'
 
 class get_numpy_include(str):
     def __str__(self):
