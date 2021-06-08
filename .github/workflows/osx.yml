@@ -27,6 +27,7 @@ jobs:
       - name: Install dependencies macos
         if: runner.os == 'macos'
         run: |
+            brew update
             brew install fftw
             brew install libsndfile
 
