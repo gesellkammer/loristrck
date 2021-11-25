@@ -33,21 +33,6 @@ parser.add_argument("-o", "--out", default="dac",
 parser.add_argument("inputfile", help="A .sdif or .mtx file (as generated via loristrck_pack")
 args = parser.parse_args()
 
-flag = 0
-
-if args.noise == 'gaussian':
-    flag += 1
-
-if args.quality == 1:
-    flag += 4
-elif args.quality == 2:
-    flag += 2
-elif args.quality == 3:
-    flag += 6 
-
-def printerr(s):
-    print(s, file=sys.stderr)
-
 
 def play_sdif(inputfile, out, sr=44100, speed=1, transposition=0):
     partials, labels = loristrck.read_sdif(inputfile)
@@ -69,23 +54,14 @@ def play_samples(samples, sr):
         sd.play(samples, sr, blocksize=4096)
         sd.wait()
     except ImportError:
-        play_samples_via_soundfile(samples, sr)
+        loristrck.util.open_with_standard_app(sndfile) 
 
 
 def play_samples_via_soundfile(samples, sr):
     outfile = tempfile.mktemp(suffix=".wav", prefix="loristrck-")
     loristrck.wavwrite(outfile, samples, sr)
-    play_sndfile(outfile)
-
-
-def play_sndfile(sndfile):
     loristrck.util.open_with_standard_app(sndfile) 
-
-
-def csound_in_path():
-    import shutil
-    return shutil.which("csound") is not None
-
+    
 
 ext = os.path.splitext(args.inputfile)[1].lower()
 if ext == '.sdif':
