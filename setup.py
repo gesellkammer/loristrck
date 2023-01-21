@@ -4,7 +4,7 @@ import glob
 from setuptools import setup, Extension
 import shutil
 
-VERSION = '1.4.0'
+VERSION = '1.4.1'
 
 class get_numpy_include(str):
     def __str__(self):
@@ -67,6 +67,9 @@ elif sys.platform == 'linux':
 # Windows
 ######################################
 elif sys.platform == 'win32':
+    if not os.path.exists('src/loriswin'):
+        
+        
     assert os.path.exists('src/loriswin'), (
         "Source files for windows not found. From a 'Developer Command Prompt' "
         "run scripts/prepare_windows_build.py first")
