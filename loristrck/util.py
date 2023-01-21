@@ -396,10 +396,10 @@ def partial_crop(p: np.ndarray, t0: float, t1: float) -> np.ndarray:
     databetween = p[idxs]
     arrays = []
     if t0 < databetween[0, 0] and t0 > pt0:
-        arrays.append(partial_sample_at(p, [t0]))
+        arrays.append(partial_sample_at(p, np.array([t0], dtype=np.float64)))
     arrays.append(databetween)
     if t1 > databetween[-1, 0] and t1 < pt1:
-        arrays.append(partial_sample_at(p, [t1]))
+        arrays.append(partial_sample_at(p, np.array([t1], dtype=np.float64)))
     return np.vstack(arrays)
 
 
@@ -1430,10 +1430,10 @@ def partial_fade(partial: np.ndarray, fadein=0., fadeout: float=0.
     """
     if fadein == 0 and fadeout == 0:
         # in place
-        partial[0, 0] = 0
-        partial[-1, 0] = 0
+        partial[0, 2] = 0
+        partial[-1, 2] = 0
         return partial
-    partial2 = np.zeros((len(partial+2, 5)))
+    partial2 = np.zeros((len(partial)+2, 5), dtype=float)
     partial2[1:-1] = partial
     t0 = max(0, partial[0, 0] - fadein)
     partial2[0] = partial[0]
@@ -1443,7 +1443,7 @@ def partial_fade(partial: np.ndarray, fadein=0., fadeout: float=0.
     t1 = partial[-1, 0] + fadeout
     partial2[-1, 0] = t1
     partial2[-1, 2] = 0
-    return partial
+    return partial2
 
 
 def _write_sdif_rbep(partials: List[np.ndarray], outfile: str, 
