@@ -16,17 +16,20 @@ jobs:
       matrix:
         os: [windows-latest]
     
+    # python scripts/prepare_windows_build.py
+
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
-        with:
-          python-version: '3.11'
-      - uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{ matrix.arch }}
-      - name: Build something requiring CL.EXE
+      - uses: microsoft/setup-msbuild@v1.1
+      - name: Build Loris
         run: |
           python scripts/prepare_windows_build.py
+
+
+
+
+
 
 
 
