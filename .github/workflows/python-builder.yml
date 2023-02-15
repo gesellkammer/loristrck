@@ -60,6 +60,16 @@ jobs:
         with:
           python-version: '3.11'
           
+            # if linux, install fftw  
+      - name: Install fftw for Linux
+        if: matrix.os == 'ubuntu-20.04'
+        run: sudo apt-get install libfftw3-dev
+      
+      # if macos, install fftw
+      - name: Install fftw for MacOS
+        if: matrix.os == 'macOS-11'
+        run: brew install fftw
+
       - name: Build wheels
         run: |
           python -m pip install wheel
