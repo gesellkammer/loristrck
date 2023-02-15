@@ -68,16 +68,15 @@ elif sys.platform == 'linux':
 ######################################
 elif sys.platform == 'win32':
     if not os.path.exists('src/loriswin'):
-        
-        
-    assert os.path.exists('src/loriswin'), (
-        "Source files for windows not found. From a 'Developer Command Prompt' "
-        "run scripts/prepare_windows_build.py first")
+                
+        assert os.path.exists('src/loriswin'), (
+            "Source files for windows not found. From a 'Developer Command Prompt' "
+            "run scripts/prepare_windows_build.py first")
 
-    assert os.path.exists('loristrck/data/libfftw3-3.dll'), (
-        "fftw dll not found. Run scripts/prepare_windows_build.py first"
-        ". Make sure to run that from a terminal in which lib.exe is in the path"
-        " (for example, from a 'Developer Powershell...')")
+        assert os.path.exists('loristrck/data/libfftw3-3.dll'), (
+            "fftw dll not found. Run scripts/prepare_windows_build.py first"
+            ". Make sure to run that from a terminal in which lib.exe is in the path"
+            " (for example, from a 'Developer Powershell...')")
 
     libs = ["libfftw3-3"]
     include_dirs.append('src/loriswin')

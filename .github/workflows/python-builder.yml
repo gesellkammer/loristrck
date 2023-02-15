@@ -28,7 +28,6 @@ jobs:
         if: runner.os == 'windows'
         # Go to a Developer Command Prompt
         run: |
-            choco install libsndfile
             python scripts/prepare_windows_build.py
             dir
 
