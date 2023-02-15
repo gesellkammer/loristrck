@@ -44,6 +44,14 @@ jobs:
           python -m pip install wheel
           python setup.py bdist_wheel
 
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist/*.whl
+
+# Make Linux build
+
 
 
 
