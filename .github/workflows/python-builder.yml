@@ -15,22 +15,18 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest]
+    
     steps:
       - uses: actions/checkout@v2
-
-      # Use python3.11
-      - name: Setup python
-        uses: actions/setup-python@v2
+      - uses: actions/setup-python@v2
         with:
-          python-version: 3.11
-
-      steps: 
-        # run in Developer Powershell"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\Tools\VsDevCmd.bat"
-        - uses: ilammy/msvc-dev-cmd@v1
-        - name: Build Loris
-          run: |
-            python scripts/prepare_windows_build.py
-
+          python-version: '3.11'
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+      - name: Build something requiring CL.EXE
+        run: |
+          python scripts/prepare_windows_build.py
 
 
 
