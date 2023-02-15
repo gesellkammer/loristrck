@@ -24,16 +24,12 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Setup Developer PowerShell
-        run: |
-          "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\Common7\Tools\VsDevCmd.bat"
-
       - name: Run in Developer Powershell
         # run in Developer Powershell"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\Tools\VsDevCmd.bat"
-        run: |
-          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\Tools\VsDevCmd.bat" && python scripts/prepare_windows_build.py
-
-
+        - uses: ilammy/msvc-dev-cmd@v1
+        - name: Build Loris
+          run: |
+            python scripts/prepare_windows_build.py
 
 
 
