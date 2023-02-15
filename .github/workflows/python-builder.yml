@@ -62,7 +62,7 @@ jobs:
           
             # if linux, install fftw  
       - name: Install fftw for Linux
-        if: matrix.os == 'ubuntu-20.04'
+        if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get install libfftw3-dev
       
       # if macos, install fftw
