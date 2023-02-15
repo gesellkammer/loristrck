@@ -25,11 +25,20 @@ jobs:
           python-version: 3.11
 
       - name: Install Visual Studio Build Tools
-        uses: ilammy/msvc-dev-cmd@v1
-        # Go to a Developer Command Prompt
         run: |
-            python scripts/prepare_windows_build.py
-            dir
+            choco install visualstudio2019buildtools --package-parameters "--includeRecommended --includeOptional --passive --add Microsoft.VisualStudio.Workload.MSBuildTools --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
+
+      - name: Setup Developer PowerShell
+        run: |
+          "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\Common7\Tools\VsDevCmd.bat"
+
+      - name: Run in Developer Powershell
+        run: |
+          python scripts/prepare_windows_build.py
+          
+      
+
+
 
 
 
