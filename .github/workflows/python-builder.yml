@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: '3.11'
       # install Visual Studio 2022 Community
-      - name: Install Visual Studio 2022 Community
+      - name: Install Visual Studio 2022 
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
@@ -35,11 +35,11 @@ jobs:
 
       - name: Build Loris
       #  Import-Module Microsoft.VisualStudio.DevShell.dll
-      # then go to the git repo and run the python script
+      # then go to the git repo 
         run: |
           cd "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
           powershell  -NoExit -Command "Import-Module ./Common7/Tools/Microsoft.VisualStudio.DevShell.dll; Enter-VsDevShell d718e166 -SkipAutomaticLocation"
-          cd {github.workspace}      
+          cd "C:\Users\runneradmin\loristrck"   
           python scripts/prepare_windows_build.py
 
 
