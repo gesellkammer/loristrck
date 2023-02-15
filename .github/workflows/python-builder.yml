@@ -7,6 +7,35 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
+  
+# Make Windows build
+  Windows_build_wheels:
+    name: Build python wheels on ${{ matrix.os }} 
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+    steps:
+      - uses: actions/checkout@v2
+
+      # Use python3.11
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies Windows
+        if: runner.os == 'windows'
+        # Go to a Developer Command Prompt
+        run: |
+            choco install libsndfile fftw
+            python scripts/prepare_windows_build.py
+            dir
+
+      - name: Build using wheel
+        run: |
+            python -m pip install wheel
+            python setup.py bdist_wheel
+            dir
 
 
