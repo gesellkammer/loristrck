@@ -67,7 +67,7 @@ jobs:
       
       # if macos, install fftw
       - name: Install fftw for MacOS
-        if: matrix.os == 'macOS-11'
+        if: matrix.os == 'macos-latest'
         run: brew install fftw
 
       - name: Build wheels
