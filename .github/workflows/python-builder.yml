@@ -11,14 +11,11 @@ jobs:
 # Make Windows build
   Windows_build_wheels:
     name: Build python wheels on ${{ matrix.os }} 
-    runs-on: ${{ matrix.os }}
+    runs-on: Windows-latest
     strategy:
       matrix:
         os: [windows-latest]
     
-    # python scripts/prepare_windows_build.py
-
-
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -29,7 +26,6 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
-
 
       - name: Build Loris
         run: |
@@ -51,6 +47,29 @@ jobs:
           path: dist/*.whl
 
 # Make Linux build
+  Linux_build_wheels:
+    name: Build python wheels on ${{ matrix.os }} 
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+          
+      - name: Build wheels
+        run: |
+          python -m pip install wheel
+          python setup.py bdist_wheel
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist/*.whl
 
 
 
