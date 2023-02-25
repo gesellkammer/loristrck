@@ -28,7 +28,9 @@ parser.add_argument("--freqdrift", default=-1, type=float,
 parser.add_argument("--croptime", default=-1, type=float,
                     help="Max. time correction beyond which a reassigned bp is considered not eligible")
 parser.add_argument("--outfile", default=None)
-parser.add_argument("--sdiftype", default="rbep", help="One of 'rbep' or '1trk'")
+parser.add_argument("--sdiftype", default="rbep", help="One of 'rbep' or '1trc'"
+                    "(RBEP means Reassigned Bandwidth-Enhanced Partials, a sdif format introduced by"
+                    "loris to support partial data with noise attached to the partial data")
 parser.add_argument("--fadetime", default=0, type=float, 
                     help="fade time used when a partial does not end with a 0 amp breakpoint")
 parser.add_argument("sndfile")

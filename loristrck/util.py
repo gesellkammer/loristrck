@@ -1296,6 +1296,7 @@ def partials_render(partials: List[np.ndarray], outfile: str, sr=44100,
     """
     Render partials as a soundfile
 
+
     Args:
         partials: the partials to render
         outfile: the outfile to write to. If not given, a temporary file is used
@@ -1304,6 +1305,11 @@ def partials_render(partials: List[np.ndarray], outfile: str, sr=44100,
         start: start time of render (default: start time of spectrum)
         end: end time to render (default: end time of spectrum)
         encoding: if given, the encoding to use
+
+    See Also
+    ~~~~~~~~
+
+    synthesize
 
     """
     samples = _core.synthesize(partials,
@@ -1410,7 +1416,7 @@ def _write_sdif_1trc(partials: List[np.ndarray], outfile: str,
             seen.add(idx)
 
 
-def partial_fade(partial: np.ndarray, fadein=0., fadeout: float=0.
+def partial_fade(partial: np.ndarray, fadein=0., fadeout=0.
                  ) -> np.ndarray:
     """
     Apply a fadein / fadeout to this partial so that the first and last
