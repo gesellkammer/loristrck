@@ -1,4 +1,4 @@
-# loristrck.util
+## loristrck.util
 
 
 Utility functions to manipulate / transform partials and list of partials
@@ -21,7 +21,7 @@ lt.util.patials_render(partials, 44100, "selected.wav")
 
 ----------
 
-# concat
+## concat
 
 
 ```python
@@ -58,7 +58,7 @@ Assumes that the partials are non-overlapping and sorted
 
 ----------
 
-# partial\_at
+## partial\_at
 
 
 ```python
@@ -86,7 +86,7 @@ Evaluates partial `p` at time `t`
 
 ----------
 
-# partial\_crop
+## partial\_crop
 
 
 ```python
@@ -120,7 +120,7 @@ Crop partial at times t0, t1
 
 ----------
 
-# partials\_sample
+## partials\_sample
 
 
 ```python
@@ -195,7 +195,7 @@ of the form:
 
 ----------
 
-# meanamp
+## meanamp
 
 
 ```python
@@ -219,7 +219,7 @@ Returns the mean amplitude of a partial
 
 ----------
 
-# meanfreq
+## meanfreq
 
 
 ```python
@@ -243,7 +243,7 @@ weighting this mean by the amplitude of each breakpoint
 
 ----------
 
-# partial\_energy
+## partial\_energy
 
 
 ```python
@@ -258,7 +258,7 @@ Integrate the partial amplitude over time. Serves as measurement
 
 for the energy contributed by the partial.
 
-## Example
+### Example
 
 Select loudest partials within the range 50 Hz - 6000 Hz
 
@@ -281,7 +281,7 @@ lt.util.plot_partials(loudest)
 
 ----------
 
-# select
+## select
 
 
 ```python
@@ -304,7 +304,7 @@ Select only those partials which have
 * a freq. between `minfreq` and `maxfreq` AND
 * have at least `minbps` breakpoints
 
-## Example
+### Example
 
 ```python
 
@@ -334,7 +334,7 @@ selected, _ = lt.util.select(partials, minbps=2, mindur=0.005,
 
 ----------
 
-# filter
+## filter
 
 
 ```python
@@ -363,7 +363,7 @@ Similar to select, but returns a generator yielding only selected partials
 
 ----------
 
-# sndread
+## sndread
 
 
 ```python
@@ -390,7 +390,7 @@ Read a sound file.
 
 ----------
 
-# sndreadmono
+## sndreadmono
 
 
 ```python
@@ -423,7 +423,7 @@ If the soundfile is multichannel, the indicated channel `chan` is returned.
 
 ----------
 
-# sndwrite
+## sndwrite
 
 
 ```python
@@ -452,7 +452,7 @@ Write the samples to a soundfile
 
 ----------
 
-# plot\_partials
+## plot\_partials
 
 
 ```python
@@ -492,7 +492,7 @@ Plot the partials using matplotlib
 
 ----------
 
-# kaiser\_length
+## kaiser\_length
 
 
 ```python
@@ -531,7 +531,7 @@ Returns the length in samples of a Kaiser window from the desired main lobe widt
 
 ----------
 
-# partials\_stretch
+## partials\_stretch
 
 
 ```python
@@ -558,7 +558,7 @@ Stretch the partials in time by a given constant factor
 
 ----------
 
-# partials\_transpose
+## partials\_transpose
 
 
 ```python
@@ -581,7 +581,7 @@ Transpose the partials by a given interval
 
 ----------
 
-# partials\_between
+## partials\_between
 
 
 ```python
@@ -608,7 +608,7 @@ Return the partials present between t0 and t1
 
 ----------
 
-# partials\_at
+## partials\_at
 
 
 ```python
@@ -643,7 +643,7 @@ Return the breakpoints at time t which satisfy the given conditions
 
 ----------
 
-# partials\_render
+## partials\_render
 
 
 ```python
@@ -675,7 +675,7 @@ Render partials as a soundfile
 
 ----------
 
-# estimate\_sampling\_interval
+## estimate\_sampling\_interval
 
 
 ```python
@@ -714,7 +714,7 @@ a buffer of samples to fill instead of working sample by sample)
 
 ----------
 
-# pack
+## pack
 
 
 ```python
@@ -766,7 +766,7 @@ of oscillators.
 
 ----------
 
-# partials\_save\_matrix
+## partials\_save\_matrix
 
 
 ```python
@@ -782,7 +782,7 @@ def partials_save_matrix(partials: list[np.ndarray], outfile: str,
 Packs short partials into longer partials and saves the result as a matrix
 
 
-## Example
+### Example
 
 ```python
 
