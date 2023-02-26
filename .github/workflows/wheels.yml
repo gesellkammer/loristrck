@@ -10,7 +10,8 @@ jobs:
       matrix:
         os: [macOS-10.15, windows-latest, ubuntu-latest]
 
-      steps:
+    steps:
+
       - uses: actions/checkout@v3
 
       # Used to host cibuildwheel
