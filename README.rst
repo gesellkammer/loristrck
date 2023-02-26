@@ -80,6 +80,8 @@ See the example scripts in `bin` for more complete examples
 Author
 ~~~~~~
 
+Eduardo Moguillansky
+
 eduardo dot moguillansky @ gmail dot com
 
 
