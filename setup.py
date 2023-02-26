@@ -67,9 +67,6 @@ elif sys.platform == 'linux':
 # Windows
 ######################################
 elif sys.platform == 'win32':
-    if not os.path.exists('src/loriswin'):
-        
-        
     assert os.path.exists('src/loriswin'), (
         "Source files for windows not found. From a 'Developer Command Prompt' "
         "run scripts/prepare_windows_build.py first")
