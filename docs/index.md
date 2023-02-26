@@ -2,9 +2,8 @@
 
 Welcome to the **loristrck** documentation!
 
-**loristrck** is a wrapper for the C++ library [Loris](<https://sourceforge.net/projects/loris/files/Loris/>).
+**loristrck** is a cython wrapper for the C++ library [Loris](<https://sourceforge.net/projects/loris/files/Loris/>).
 
-It is written in cython and targets python 3 (>= 3.8 at the moment). 
 
 ## Quick Introduction
 
