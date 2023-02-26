@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest]
-        python-version: ["3.9", "3.10"]
+        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
       - uses: actions/checkout@v2
@@ -80,6 +80,8 @@ jobs:
       # Used to host cibuildwheel
       - name: Setup python
         uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
       #- name: Install dependencies macos
       #  if: runner.os == 'macos'
