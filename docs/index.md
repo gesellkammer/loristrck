@@ -93,29 +93,17 @@ lt.partials_render(selected, outfile="stretched.wav")
 
 ## Installation
 
-### macOS
-
 ```bash
-brew install fftw
 pip install loristrck
 ```
 
-----
+### Optional Dependencies: libsndfile
 
-### Linux
+In some platforms it might be needed to install libsndfile in order to load
+soundfiles other than wav files. 
 
-For debian/ubuntu, the dependencies can be installed via `apt`:
+* **macOS**: install via *brew*: `brew install libsndfile`
+* **linux** (ubuntu): `sudo apt-get install libsndfile`
 
-```bash
-sudo apt install libfftw3-dev libsndfile1-dev
-pip install loristrck
-```
-
-----
-
-### Windows
-
-```
-pip install loristrck
-```
-
+Windows does not need any installation since the library is included in the
+python package (see https://github.com/pukkapies/PySoundFile)
