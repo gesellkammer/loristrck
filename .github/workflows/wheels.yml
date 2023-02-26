@@ -71,8 +71,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # os: [macOS-10.15, windows-latest, ubuntu-latest]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macOS-10.15]
 
     steps:
 
@@ -82,43 +81,24 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v4
 
-      # install Visual Studio 2022 Community
-      - name: Install Visual Studio 2022
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-        
       - name: Install dependencies macos
         if: runner.os == 'macos'
         run: |
             brew update
             brew install fftw
 
-      - name: Install fftw for Linux
-        # if: matrix.os == 'ubuntu-latest'
-        if: runner.os == 'linux'
-        run: |
-            sudo apt -y install libfftw3-dev
-
       - name: Windows - Enable Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1.7.0
-
-      - name: Build Loris
-        if: runner.os == 'windows'
-        run: |
-          Write-Output "Current Location is $($PWD.Path)"
-          cd "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-          powershell  -NoExit -Command "Import-Module ./Common7/Tools/Microsoft.VisualStudio.DevShell.dll; Enter-VsDevShell d718e166 -SkipAutomaticLocation"
-          cd ${{github.workspace}}
-          python scripts/prepare_windows_build.py
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.0
         env:
             CIBW_BUILD: 'cp39-* cp310-* cp311-*'
             CIBW_ARCHS_MACOS: 'x86_64'
+            # CIBW_ARCHS_MACOS: x86_64 arm64
             CIBW_SKIP: 'pp* *686* *-musllinux_*'
             CIBW_BEFORE_ALL_LINUX: yum install -y fftw-devel
+            CIBW_BEFORE_ALL_MACOS: brew update; brew install fftw
 
       - uses: actions/upload-artifact@v3
         with:
