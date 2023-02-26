@@ -30,7 +30,6 @@ jobs:
         if: runner.os == 'linux'
         run: |
             sudo apt -y install libfftw3-dev
-            echo | gcc -E -Wp,-v -
 
       - name: Windows - Enable Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1.7.0
@@ -55,6 +54,7 @@ jobs:
             CIBW_BUILD: 'cp39-* cp310-* cp311-*'
             CIBW_ARCHS_MACOS: 'x86_64'
             CIBW_SKIP: 'pp* *686* *-musllinux_*'
+            CIBW_BEFORE_ALL_LINUX: yum install -y fftw-devel
 
       - uses: actions/upload-artifact@v3
         with:
