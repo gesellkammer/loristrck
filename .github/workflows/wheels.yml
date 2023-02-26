@@ -87,9 +87,6 @@ jobs:
             brew update
             brew install fftw
 
-      - name: Windows - Enable Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@v1.7.0
-
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.0
         env:
