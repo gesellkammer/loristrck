@@ -9,17 +9,19 @@ does not need to be installed previously.
 
 
 Documentation
-=============
+-------------
+
 
 https://loristrck.readthedocs.io
 
 ---------------
 
+
 Installation
-============
+------------
 
 
-::
+.. code-block:: bash
 
     pip install loristrck
 
@@ -29,7 +31,9 @@ Install from source in Windows
 
 You need to have Visual Studio installed
 
-::
+
+.. code-block:: bash
+
 
     # From a Developer Powershell
     python scripts/prepare_windows_build.py
@@ -42,9 +46,10 @@ You need to have Visual Studio installed
 
 
 Usage
-=====
+-----
 
 .. code-block:: python
+
 
    import loristrck as lt
 
@@ -73,12 +78,12 @@ See the example scripts in `bin` for more complete examples
 
 
 Author
-------
+~~~~~~
 
 eduardo dot moguillansky @ gmail dot com
 
 
 License
--------
+~~~~~~~
 
 GPL
