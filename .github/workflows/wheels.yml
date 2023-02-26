@@ -16,7 +16,7 @@ jobs:
 
       # Used to host cibuildwheel
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         
       - name: Install dependencies macos
         if: runner.os == 'macos'
@@ -26,8 +26,11 @@ jobs:
             brew install libsndfile
 
       - name: Install fftw for Linux
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get install libfftw3-dev
+        # if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'linux'
+        run: |
+            sudo apt -y install libfftw3-dev
+            echo | gcc -E -Wp,-v -
 
       - name: Windows - Enable Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1.7.0
