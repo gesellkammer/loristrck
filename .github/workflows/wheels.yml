@@ -68,5 +68,6 @@ jobs:
         run: |
             echo $TWINE_USERNAME
             echo $TWINE_PASSWORD
+            python -m pip install -U twine virtualenv
             twine upload --skip-existing wheelhouse/*.whl
         continue-on-error: true
