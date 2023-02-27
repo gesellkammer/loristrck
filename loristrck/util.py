@@ -1187,8 +1187,10 @@ class PartialIndex:
     function needs to always start a linear search from the beginning of the
     partials list.
 
-    **NB**: the index is only valid as long as the original partial list is not
-    modified
+    !!! note
+
+        The index is only valid as long as the original partial list is not
+        modified
 
 
     Args:
