@@ -1146,6 +1146,10 @@ def partials_between(partials: List[np.ndarray], t0=0., t1=0.) -> List[np.ndarra
     """
     Return the partials present between t0 and t1
 
+    This function is not optimized and performs a linear search over the
+    partials. If this function is to be called repeatedly or within a
+    performance relevant section, use `PartialIndex` instead
+
     Args:
         partials: a list of partials
         t0: start time in secs
@@ -1153,17 +1157,71 @@ def partials_between(partials: List[np.ndarray], t0=0., t1=0.) -> List[np.ndarra
 
     Returns:
         the partials within the time range (t0, t1)
+
+
     """
     if t1 == 0:
         t1 = partials_timerange(partials)[-1]
     out = []
     for p in partials:
-        pt0, pt1 = partial_timerange(p)
-        if pt1 > t0 and pt0 < t1:
-            out.append(p)
-        elif pt0 > t1:
+        if p[0, 0] > t1:
             break
+        if p[-1, 0] > t0:
+            out.append(p)
     return out
+
+
+def _first_partial_after(partials: list[np.ndarray], t0: float) -> int:
+    for i, p in enumerate(partials):
+        if p[-1, 0] > t0:
+            return i
+    return -1
+
+
+class PartialIndex:
+    """
+    Create an index to accelerate finding partials
+
+    After creating the PartialIndex, each call to `partialindex.partials_between`
+    should be faster than simply calling `partials_index` since the unoptimized
+    function needs to always start a linear search from the beginning of the
+    partials list.
+
+    **NB**: the index is only valid as long as the original partial list is not
+    modified
+
+
+    Args:
+        partials: the partials to index
+        dt: the time resolution of the index. The lower this value the faster
+            each query will be but the slower the creation of the index itself
+
+    """
+    def __init__(self, partials: list[np.ndarray], dt=1.0):
+        start, end = partials_timerange(partials)
+        self.start = start
+        self.end = end
+        self.dt = dt
+        self.partials = partials
+        self.firstpartials = [_first_partial_after(partials, float(t))
+                              for t in np.arange(start, end, dt)]
+
+    def partials_between(self, t0: float, t1: float) -> list[np.ndarray]:
+        """
+        Returns the partials which are defined within the given time range
+
+        Args:
+            t0: the start of the time interval
+            t1: the end of the time interval
+
+        Returns:
+            a list of partials present during the given time range
+        """
+        idx = int((t0 - self.start) / self.dt)
+        firstpartial = self.firstpartials[idx]
+        if firstpartial < 0:
+            return []
+        return partials_between(self.partials[firstpartial:], t0, t1)
 
 
 def _f2m(freq, A4=442):
