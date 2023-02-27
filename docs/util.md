@@ -29,7 +29,7 @@ lt.util.patials_render(partials, 44100, "selected.wav")
 
 ```python
 
-def (partials, dt) -> None
+def () -> None
 
 ```
 
@@ -46,14 +46,6 @@ partials list.
 
     The index is only valid as long as the original partial list is not
     modified
-
-
-
-**Args**
-
-* **partials**: the partials to index
-* **dt**: the time resolution of the index. The lower this value the faster
-    each query will be but the slower the creation of the index itself
 
 
 ---------
@@ -74,8 +66,10 @@ def __init__(self, partials: list[np.ndarray], dt: float = 1.0) -> None
 
 **Args**
 
-* **partials** (`list[np.ndarray]`):
-* **dt** (`float`):  (*default*: `1.0`)
+* **partials** (`list[np.ndarray]`): the partials to index
+* **dt** (`float`): the time resolution of the index. The lower this value the
+    faster         each query will be but the slower the creation of the index
+    itself (*default*: `1.0`)
 
 ----------
 
@@ -369,7 +363,11 @@ Interval to ratio
 
 **Args**
 
-* **interval** (`float`):
+* **interval** (`float`): the interval to convert to a ratio
+
+**Returns**
+
+&nbsp;&nbsp;&nbsp;&nbsp;(`float`) the ratio corresponding to the given interval (2 corresponds to an interval of an octave, 12)
 
 
 ---------
@@ -1165,9 +1163,14 @@ Transpose the partials by a given interval
 
 **Args**
 
-* **partials** (`List[np.ndarray]`):
-* **interval** (`float`):
-* **inplace** (`bool`):  (*default*: `False`)
+* **partials** (`List[np.ndarray]`): the partials to transpose
+* **interval** (`float`): the interval in semitones
+* **inplace** (`bool`): if True, the partials are modified in place. Otherwise
+    a new partial list is returned (*default*: `False`)
+
+**Returns**
+
+&nbsp;&nbsp;&nbsp;&nbsp;(`List[np.ndarray]`) the modified partial list, or the original list modified in place
 
 
 ---------
@@ -1370,7 +1373,8 @@ Write the samples to a soundfile
 
 ```python
 
-def wavwrite(outfile, samples, sr: int = 44100, bits: int = 32) -> None
+def wavwrite(outfile: str, samples: np.ndarray, sr: int = 44100, bits: int = 32
+             ) -> None
 
 ```
 
@@ -1381,10 +1385,11 @@ Write samples to a wav-file (see also sndwrite) as float32 or float64
 
 **Args**
 
-* **outfile**:
-* **samples**:
-* **sr** (`int`):  (*default*: `44100`)
-* **bits** (`int`):  (*default*: `32`)
+* **outfile** (`str`): the path of the output file
+* **samples** (`np.ndarray`): the samples to write
+* **sr** (`int`): the sample rate (*default*: `44100`)
+* **bits** (`int`): the bit-width used when writing the samples (*default*:
+    `32`)
 
 
 ---------
