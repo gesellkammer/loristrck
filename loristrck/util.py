@@ -1087,6 +1087,12 @@ def estimate_sampling_interval(partials: List[np.ndarray],
 def partial_timerange(partial: np.ndarray) -> Tuple[float, float]:
     """
     Return begin and endtime of partial
+
+    Args:
+        partial: the partial to query
+
+    Returns:
+        the start and end time
     """
     return partial[0, 0], partial[-1, 0]
 
@@ -1162,6 +1168,12 @@ def partials_transpose(partials: List[np.ndarray], interval: float, inplace=Fals
 def partials_timerange(partials: List[np.ndarray]) -> Tuple[float, float]:
     """
     Return the timerange of the partials: (begin, end)
+
+    Args:
+        partials: the partials to query
+
+    Returns:
+        a tuple (start, end) with the corresponding times in seconds
     """
     t0 = partials[0][0, 0]
     t1 = max(p[-1, 0] for p in partials)
@@ -1308,10 +1320,11 @@ def _m2n(midinote: float) -> str:
 def partials_at(partials: List[np.ndarray], t: float, maxcount=0, mindb=-120,
                 minfreq=10, maxfreq=22000):
     """
-    Return the breakpoints at time t which satisfy the given conditions
+    Sample the partials which satisfy the given conditions at time t
 
     Args:
-        partials: the partials analyzed
+        partials: the partials analyzed. The partials should be present at the
+            given time (after calling partials_between or PartialIndex.partials_between)
         t: the time in seconds
         maxcount: the max. partials to detect, ordered by amplitude (0=all)
         mindb: the min. amplitude a partial has to have at `t` in order to be counted
@@ -1322,8 +1335,7 @@ def partials_at(partials: List[np.ndarray], t: float, maxcount=0, mindb=-120,
         the breakpoints at time t which satisfy the given conditions
     """
     EPS = 0.000000001
-    present = partials_between(partials, t-EPS, t+EPS)
-    allbps = [partial_at(partial, t) for partial in present]
+    allbps = [partial_at(partial, t) for partial in partials]
     minamp = db2amp(mindb)
     bps = [
         bp for bp in allbps if minfreq<=bp[0] < maxfreq and bp[1] > minamp
@@ -1334,10 +1346,14 @@ def partials_at(partials: List[np.ndarray], t: float, maxcount=0, mindb=-120,
     return bps[:maxcount]
 
 
-def breakpoints_extend(bps, dur):
+def breakpoints_extend(bps, dur: float) -> list[np.ndarray]:
     """
-    Given a list of breakpoints, extend each to a partial with the
-    given duration
+    Given a list of breakpoints, extend each to form a partial of the given dur
+
+    Args:
+        bps: a list of breakpoints, as returned by `partials_at`
+        dur: the duration of the resulting partial
+
 
     ### Example
 
@@ -1345,15 +1361,12 @@ def breakpoints_extend(bps, dur):
 
     samples, sr = sndreadmono("...")
     partials = analyze(samples, sr, resolution=50)
-    breakpoints = partials_at(partials, 0.5, maxcount=4)
+    selected = partials_between(partials, 0.5, 0.5)
+    breakpoints = partials_at(selected, 0.5, maxcount=4)
     print(breakpoints_to_chord(breakpoints))
     partials_render(breakpoints_extend(breakpoints, 4), outfile="chord.wav", open=True)
     
     ```
-    
-    Args:
-        bps: a list of breakpoints, as returned by `partials_at`
-        dur: the duration of the resulting partial
 
     """
     partials = []
@@ -1368,8 +1381,10 @@ def breakpoints_extend(bps, dur):
 
 def breakpoints_to_chord(bps, A4=442) -> Tuple[str, float, float]:
     """
-    Convert breakpoints (as returned by partials_at) to a list of
-    (notename, freq, amplitude_db)
+    Convert breakpoints to a list of (notename, freq, amplitude_db
+
+    Args:
+        bps: the breakpoints, as returned, for example, by partials_at
     """
     out = []
     for bp in bps:
@@ -1610,7 +1625,12 @@ def _write_sdif_rbep(partials: List[np.ndarray], outfile: str,
             seen.add(idx)
 
 
-def write_sdif(partials: List[np.ndarray], outfile: str, labels=None, fmt="RBEP", fadetime=0.) -> None:
+def write_sdif(partials: List[np.ndarray],
+               outfile: str,
+               labels=None,
+               fmt="RBEP",
+               fadetime=0.
+               ) -> None:
     """
     Write a list of partials as SDIF.  
     
