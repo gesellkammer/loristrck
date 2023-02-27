@@ -775,17 +775,27 @@ def _wavwriter(outfile, sr=44100, bits=32, channels=1, fmt:str=None):
                                format=fmt, subtype=subtype)
 
 
-def wavwrite(outfile, samples, sr=44100, bits=32):
+def wavwrite(outfile: str, samples: np.ndarray, sr=44100, bits=32) -> None:
     """
     Write samples to a wav-file (see also sndwrite) as float32 or float64
+
+    Args:
+        outfile: the path of the output file
+        samples: the samples to write
+        sr: the sample rate
+        bits: the bit-width used when writing the samples
     """
     f = _wavwriter(outfile, sr=sr, bits=bits, channels=_numchannels(samples))
     f.write(samples)
     f.close()
 
 
-def partials_save_matrix(partials: List[np.ndarray], outfile: str, dt: float = None,
-                         gapfactor=3., maxtracks=0, maxactive=0
+def partials_save_matrix(partials: List[np.ndarray],
+                         outfile: str,
+                         dt: float = None,
+                         gapfactor=3.,
+                         maxtracks=0,
+                         maxactive=0
                          ) -> Tuple[List[np.ndarray], np.ndarray]:
     """
     Packs short partials into longer partials and saves the result as a matrix
