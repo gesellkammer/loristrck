@@ -403,10 +403,14 @@ def partial_crop(p: np.ndarray, t0: float, t1: float) -> np.ndarray:
     return np.vstack(arrays)
 
 
-def partials_sample(partials: List[np.ndarray], dt=0.002, t0: float = -1, t1: float = -1,
-                    maxactive=0, interleave=True):
+def partials_sample(partials: List[np.ndarray],
+                    dt=0.002,
+                    t0: float = -1,
+                    t1: float = -1,
+                    maxactive=0,
+                    interleave=True):
     """
-    Samples the partials between times `t0` and `t1` with a sampling period `dt`
+    Samples the partials between times `t0` and `t1` with sampling period `dt`
 
     Args:
         partials: a list of 2D-arrays, each representing a partial
@@ -1414,10 +1418,8 @@ def partials_render(partials: List[np.ndarray], outfile: str, sr=44100,
         end: end time to render (default: end time of spectrum)
         encoding: if given, the encoding to use
 
-    See Also
-    ~~~~~~~~
 
-    synthesize
+    **See Also**: synthesize
 
     """
     samples = _core.synthesize(partials,
@@ -1440,6 +1442,9 @@ def chord_to_partials(chord: List[Tuple[float, float]], dur: float, fade=0.1,
         fade: the fade time
         startmargin: ??
         endmargin ??
+
+    Returns:
+        a list of partials
     """
     partials = []
     start = max(startmargin, 0.001)
