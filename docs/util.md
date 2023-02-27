@@ -105,15 +105,13 @@ Returns the partials which are defined within the given time range
 
 ```python
 
-def breakpoints_extend(bps, dur) -> None
+def breakpoints_extend(bps, dur: float) -> list[np.ndarray]
 
 ```
 
 
-Given a list of breakpoints, extend each to a partial with the
+Given a list of breakpoints, extend each to form a partial of the given dur
 
-
-given duration
 
 ### Example
 
@@ -121,7 +119,8 @@ given duration
 
 samples, sr = sndreadmono("...")
 partials = analyze(samples, sr, resolution=50)
-breakpoints = partials_at(partials, 0.5, maxcount=4)
+selected = partials_between(partials, 0.5, 0.5)
+breakpoints = partials_at(selected, 0.5, maxcount=4)
 print(breakpoints_to_chord(breakpoints))
 partials_render(breakpoints_extend(breakpoints, 4), outfile="chord.wav", open=True)
 
@@ -132,7 +131,7 @@ partials_render(breakpoints_extend(breakpoints, 4), outfile="chord.wav", open=Tr
 **Args**
 
 * **bps**: a list of breakpoints, as returned by `partials_at`
-* **dur**: the duration of the resulting partial
+* **dur** (`float`): the duration of the resulting partial
 
 
 ---------
@@ -148,16 +147,13 @@ def breakpoints_to_chord(bps, A4: int = 442) -> tuple[str, float, float]
 ```
 
 
-Convert breakpoints (as returned by partials_at) to a list of
-
-
-(notename, freq, amplitude_db)
+Convert breakpoints to a list of (notename, freq, amplitude_db
 
 
 
 **Args**
 
-* **bps**:
+* **bps**: the breakpoints, as returned, for example, by partials_at
 * **A4** (`int`):  (*default*: `442`)
 
 
@@ -838,7 +834,11 @@ Return begin and endtime of partial
 
 **Args**
 
-* **partial** (`np.ndarray`):
+* **partial** (`np.ndarray`): the partial to query
+
+**Returns**
+
+&nbsp;&nbsp;&nbsp;&nbsp;(`Tuple[float, float]`) the start and end time
 
 
 ---------
@@ -856,13 +856,15 @@ def partials_at(partials: list[np.ndarray], t: float, maxcount: int = 0,
 ```
 
 
-Return the breakpoints at time t which satisfy the given conditions
+Sample the partials which satisfy the given conditions at time t
 
 
 
 **Args**
 
-* **partials** (`List[np.ndarray]`): the partials analyzed
+* **partials** (`List[np.ndarray]`): the partials analyzed. The partials should
+    be present at the         given time (after calling partials_between or
+    PartialIndex.partials_between)
 * **t** (`float`): the time in seconds
 * **maxcount** (`int`): the max. partials to detect, ordered by amplitude
     (0=all) (*default*: `0`)
@@ -1140,7 +1142,11 @@ Return the timerange of the partials: (begin, end)
 
 **Args**
 
-* **partials** (`List[np.ndarray]`):
+* **partials** (`List[np.ndarray]`): the partials to query
+
+**Returns**
+
+&nbsp;&nbsp;&nbsp;&nbsp;(`Tuple[float, float]`) with the corresponding times in seconds
 
 
 ---------
