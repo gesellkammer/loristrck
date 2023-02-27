@@ -1205,8 +1205,14 @@ class PartialIndex:
         self.end = end
         self.dt = dt
         self.partials = partials
-        self.firstpartials = [_first_partial_after(partials, float(t))
-                              for t in np.arange(start, end, dt)]
+        firstpartials = []
+        startidx = 0
+        for t in np.arange(start, end, dt):
+            relidx = _first_partial_after(partials[max(0, startidx-1):], float(t))
+            absidx = startidx + relidx
+            firstpartials.append(absidx)
+            startidx = absidx
+        self.firstpartials = firstpartials
 
     def partials_between(self, t0: float, t1: float) -> list[np.ndarray]:
         """
@@ -1219,6 +1225,7 @@ class PartialIndex:
         Returns:
             a list of partials present during the given time range
         """
+        assert t0 <= t1
         idx = int((t0 - self.start) / self.dt)
         firstpartial = self.firstpartials[idx]
         if firstpartial < 0:
