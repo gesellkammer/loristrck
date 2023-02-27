@@ -1110,6 +1110,13 @@ def partials_stretch(partials: List[np.ndarray], factor: float, inplace=False
 def i2r(interval: float) -> float:
     """
     Interval to ratio
+
+    Args:
+        interval: the interval to convert to a ratio
+
+    Returns:
+        the ratio corresponding to the given interval (2 corresponds to
+        an interval of an octave, 12)
     """
     return 2**(interval/12.)
 
@@ -1118,6 +1125,15 @@ def partials_transpose(partials: List[np.ndarray], interval: float, inplace=Fals
                        ) -> List[np.ndarray]:
     """
     Transpose the partials by a given interval
+
+    Args:
+        partials: the partials to transpose
+        interval: the interval in semitones
+        inplace: if True, the partials are modified in place. Otherwise
+            a new partial list is returned
+
+    Returns:
+        the modified partial list, or the original list modified in place
     """
     factor = i2r(interval)
     if inplace:
