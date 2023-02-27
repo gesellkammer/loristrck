@@ -1192,14 +1192,14 @@ class PartialIndex:
         The index is only valid as long as the original partial list is not
         modified
 
-
-    Args:
-        partials: the partials to index
-        dt: the time resolution of the index. The lower this value the faster
-            each query will be but the slower the creation of the index itself
-
     """
     def __init__(self, partials: list[np.ndarray], dt=1.0):
+        """
+        Args:
+            partials: the partials to index
+            dt: the time resolution of the index. The lower this value the faster
+                each query will be but the slower the creation of the index itself
+        """
         start, end = partials_timerange(partials)
         self.start = start
         self.end = end
