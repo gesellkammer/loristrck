@@ -184,10 +184,6 @@ Generate partials from the given chord
 * **startmargin** (`float`): ??     endmargin ?? (*default*: `0.0`)
 * **endmargin** (`float`):  (*default*: `0.0`)
 
-**Returns**
-
-&nbsp;&nbsp;&nbsp;&nbsp;(`List[np.ndarray]`) a list of partials
-
 
 ---------
 
@@ -936,7 +932,10 @@ def partials_render(partials: list[np.ndarray], outfile: str, sr: int = 44100,
 Render partials as a soundfile
 
 
-**See Also**: synthesize
+See Also
+~~~~~~~~
+
+synthesize
 
 
 
@@ -970,7 +969,7 @@ def partials_sample(partials: list[np.ndarray], dt: float = 0.002,
 ```
 
 
-Samples the partials between times `t0` and `t1` with sampling period `dt`
+Samples the partials between times `t0` and `t1` with a sampling period `dt`
 
 
 To be used in connection with `pack`, which packs short non-simultaneous
