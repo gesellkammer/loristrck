@@ -157,7 +157,7 @@ setup(
         'cython>=0.25',
         'numpyx',
         'soundfile',
-        'sounddevice',
+        # 'sounddevice',
         'pysdif3>=0.6.0'
     ],
     package_data=package_data,

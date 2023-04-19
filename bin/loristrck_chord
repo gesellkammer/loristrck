@@ -78,8 +78,6 @@ w = csv.writer(s)
 for row in chord:
     note, freq, amp = row
     print(f"{note},{freq:.1f},{amp:.1f}")
-    # w.writerow(row)
-#print(s.getvalue())
 
 
 def makePartials(chord, dur, ampoverride=0, margin=0):
@@ -92,14 +90,18 @@ def makePartials(chord, dur, ampoverride=0, margin=0):
 
 if args.sound:
     if args.sound == "dac":
+        try:
+            import sounddevice as sd
+        except ImportError:
+            print("sounddevice is needed for playback. Install it via 'pip install sounddevice'")
+            sys.exit(-1)
+
         partials = makePartials(chord, args.sounddur, margin=0.25)
-    
         sr = 44100
         samples = loristrck.synthesize(partials, samplerate=sr)
-        import sounddevice as sd
         sd.play(samples, sr, blocksize=4096)
         sd.wait()
-        # time.sleep(0.2)
+            
     else:
         partials = makePartials(chord, args.sounddur)
     
