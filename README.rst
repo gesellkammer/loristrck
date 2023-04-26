@@ -1,6 +1,12 @@
 LORISTRCK
 =========
 
+|sh-downloads| |sh-month|
+
+.. |sh-downloads| image:: https://static.pepy.tech/badge/loristrck
+.. |sh-month| image:: https://static.pepy.tech/badge/loristrck/month
+
+
 `loristrck` is a wrapper for the C++ partial-tracking library Loris.
 
 It is written in cython and targets python 3 (>= 3.8 at the moment).
