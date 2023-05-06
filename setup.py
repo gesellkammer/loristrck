@@ -39,7 +39,8 @@ def python_arch() -> int:
 # Mac OSX
 ######################################
 
-package_data = {}
+package_data = {'loristrck': ['_core.pyi', 'py.typed']}
+
 print("Platform", sys.platform)
 
 if sys.platform == 'darwin':
@@ -94,7 +95,7 @@ elif sys.platform == 'win32':
         #  "-DHAVE_CONFIG_H",
         "-D_USE_MATH_DEFINES",
     ]
-    package_data['loristrck'] = ['data/*']
+    # package_data['loristrck'] = ['data/*']
 assert os.path.exists(loris_base)
 
 sources = []
