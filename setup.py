@@ -155,7 +155,6 @@ setup(
              'bin/loristrck_chord'],
     install_requires=[
         'numpy>=1.8',
-        'cython>=0.25',
         'numpyx',
         'soundfile',
         # 'sounddevice',
