@@ -178,15 +178,11 @@ Generate partials from the given chord
 
 **Args**
 
-* **chord** (`list[tuple[float, float]]`): a list of (freq, amp) tuples
+* **chord** (`List[Tuple[float, float]]`): a list of (freq, amp) tuples
 * **dur** (`float`): the duration of the partials
 * **fade** (`float`): the fade time (*default*: `0.1`)
 * **startmargin** (`float`): ??     endmargin ?? (*default*: `0.0`)
 * **endmargin** (`float`):  (*default*: `0.0`)
-
-**Returns**
-
-&nbsp;&nbsp;&nbsp;&nbsp;(`list[np.ndarray]`) a list of partials
 
 
 ---------
@@ -216,7 +212,7 @@ Assumes that the partials are non-overlapping and sorted
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): a seq. of partials (each partial is a
+* **partials** (`List[np.ndarray]`): a seq. of partials (each partial is a
     2D-array)
 * **fade** (`float`): fadetime to apply at the end/beginning of each
     concatenated partial (*default*: `0.005`)
@@ -299,7 +295,7 @@ a buffer of samples to fill instead of working sample by sample)
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): a list of partials
+* **partials** (`List[np.ndarray]`): a list of partials
 * **maxpartials** (`int`): if given, only consider this number of partials to
     calculate dt (*default*: `0`)
 * **percentile** (`int`): ??? (*default*: `25`)
@@ -322,8 +318,8 @@ a buffer of samples to fill instead of working sample by sample)
 ```python
 
 def filter(partials: list[np.ndarray], mindur: float = 0.0, mindb: int = -120, 
-           maxfreq: int = 20000, minfreq: int = 0, minbps: int = 1, 
-           t0: float = 0.0, t1: float = 0.0) -> Any
+           maxfreq: int = 2400, minfreq: int = 0, minbps: int = 1, 
+           t0: float = 0.0, t1: float = 0.0) -> None
 
 ```
 
@@ -334,18 +330,14 @@ Similar to select, but returns a generator yielding only selected partials
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): the partials to filter
-* **mindur** (`float`): the min. duration of a partial (*default*: `0.0`)
-* **mindb** (`int`): the min. amplitude, in dB (*default*: `-120`)
-* **maxfreq** (`int`): the max. frequency (*default*: `20000`)
-* **minfreq** (`int`): the min. frequency (*default*: `0`)
-* **minbps** (`int`): the min. number of breakpoints (*default*: `1`)
-* **t0** (`float`): the start time (*default*: `0.0`)
-* **t1** (`float`): the end time (*default*: `0.0`)
-
-**Returns**
-
-&nbsp;&nbsp;&nbsp;&nbsp;an iterator over the partials which fulfill these conditions
+* **partials** (`List[np.ndarray]`):
+* **mindur** (`float`):  (*default*: `0.0`)
+* **mindb** (`int`):  (*default*: `-120`)
+* **maxfreq** (`int`):  (*default*: `2400`)
+* **minfreq** (`int`):  (*default*: `0`)
+* **minbps** (`int`):  (*default*: `1`)
+* **t0** (`float`):  (*default*: `0.0`)
+* **t1** (`float`):  (*default*: `0.0`)
 
 
 ---------
@@ -423,15 +415,15 @@ Returns the length in samples of a Kaiser window from the desired main lobe widt
 
 ```python
 
-def loudest(partials: list[np.ndarray], N: int) -> list[np.ndarray]
+def loudest(partials: list[np.ndarray], N: int = 0) -> list[np.ndarray]
 
 ```
 
 
-Get the loudest N partials.
+Get the loudest N partials. If N is not given, all partials
 
 
-If N is not given, all partials are returned, sorted in declining energy
+are returned, sorted in declining energy
 
 The returned partials will be sorted by declining energy
 (integrated amplitude)
@@ -440,8 +432,8 @@ The returned partials will be sorted by declining energy
 
 **Args**
 
-* **partials** (`list[np.ndarray]`):
-* **N** (`int`):
+* **partials** (`List[np.ndarray]`):
+* **N** (`int`):  (*default*: `0`)
 
 
 ---------
@@ -453,7 +445,7 @@ The returned partials will be sorted by declining energy
 ```python
 
 def matrix_save(data: np.ndarray, outfile: str, bits: int = 32, 
-                metadata: dict[str, Any] = None) -> None
+                metadata: Dict[str, Any] = None) -> None
 
 ```
 
@@ -509,7 +501,7 @@ matrix_save(m, "out.mtx")
 * **outfile** (`str`): the path to the resulting output file. The format should
     be         .mtx or .npy
 * **bits** (`int`): 32 or 64. 32 bits should be enough (*default*: `32`)
-* **metadata** (`dict[str, Any]`): if given, it is included in the wav metadata
+* **metadata** (`Dict[str, Any]`): if given, it is included in the wav metadata
     and all numeric         values are included in the data itself (*default*:
     `None`)
 
@@ -597,7 +589,7 @@ of oscillators.
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): a list of arrays, where each array
+* **partials** (`List[np.ndarray]`): a list of arrays, where each array
     represents a partial,         as returned by analyze
 * **maxtracks** (`int`): if > 0, sets the maximum number of tracks. Partials not
     fitting in will be discarded. Consider living this at 0, to allow
@@ -617,7 +609,7 @@ of oscillators.
 
 **Returns**
 
-&nbsp;&nbsp;&nbsp;&nbsp;(`tuple[list[np.ndarray], list[np.ndarray]]`) a tuple (tracks, unpacked partials)
+&nbsp;&nbsp;&nbsp;&nbsp;(`Tuple[List[np.ndarray], List[np.ndarray]]`) a tuple (tracks, unpacked partials)
 
 
 ---------
@@ -628,8 +620,7 @@ of oscillators.
 
 ```python
 
-def partial_at(p: np.ndarray, t: float, extend: bool = False
-               ) -> np.ndarray | None
+def partial_at(p: np.ndarray, t: float, extend: bool = False) -> Opt[np.ndarray]
 
 ```
 
@@ -648,7 +639,7 @@ Evaluates partial `p` at time `t`
 
 **Returns**
 
-&nbsp;&nbsp;&nbsp;&nbsp;(`np.ndarray | None`) with columns (time, freq, amp, bw). Returns None if the array is not defined at the given time
+&nbsp;&nbsp;&nbsp;&nbsp;(`Opt[np.ndarray]`) with columns (time, freq, amp, bw). Returns None if the array is not defined at the given time
 
 
 ---------
@@ -847,7 +838,7 @@ Return begin and endtime of partial
 
 **Returns**
 
-&nbsp;&nbsp;&nbsp;&nbsp;(`tuple[float, float]`) the start and end time
+&nbsp;&nbsp;&nbsp;&nbsp;(`Tuple[float, float]`) the start and end time
 
 
 ---------
@@ -871,7 +862,7 @@ Sample the partials which satisfy the given conditions at time t
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): the partials analyzed. The partials should
+* **partials** (`List[np.ndarray]`): the partials analyzed. The partials should
     be present at the         given time (after calling partials_between or
     PartialIndex.partials_between)
 * **t** (`float`): the time in seconds
@@ -914,13 +905,13 @@ performance relevant section, use `PartialIndex` instead
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): a list of partials
+* **partials** (`List[np.ndarray]`): a list of partials
 * **t0** (`float`): start time in secs (*default*: `0.0`)
 * **t1** (`float`): end time in secs (*default*: `0.0`)
 
 **Returns**
 
-&nbsp;&nbsp;&nbsp;&nbsp;(`list[np.ndarray]`) the partials within the time range (t0, t1)
+&nbsp;&nbsp;&nbsp;&nbsp;(`List[np.ndarray]`) the partials within the time range (t0, t1)
 
 
 ---------
@@ -941,13 +932,16 @@ def partials_render(partials: list[np.ndarray], outfile: str, sr: int = 44100,
 Render partials as a soundfile
 
 
-**See Also**: synthesize
+See Also
+~~~~~~~~
+
+synthesize
 
 
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): the partials to render
+* **partials** (`List[np.ndarray]`): the partials to render
 * **outfile** (`str`): the outfile to write to. If not given, a temporary file
     is used
 * **sr** (`int`): samplerate to render with (*default*: `44100`)
@@ -975,7 +969,7 @@ def partials_sample(partials: list[np.ndarray], dt: float = 0.002,
 ```
 
 
-Samples the partials between times `t0` and `t1` with sampling period `dt`
+Samples the partials between times `t0` and `t1` with a sampling period `dt`
 
 
 To be used in connection with `pack`, which packs short non-simultaneous
@@ -1015,7 +1009,7 @@ of the form:
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): a list of 2D-arrays, each representing a
+* **partials** (`List[np.ndarray]`): a list of 2D-arrays, each representing a
     partial
 * **dt** (`float`): sampling period (*default*: `0.002`)
 * **t0** (`float`): start time, or None to use the start time of the spectrum
@@ -1071,7 +1065,7 @@ lt.util.partials_save_matrix(selected, 0.002, "packed.mtx")
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): a list of numpy 2D-arrays, each
+* **partials** (`List[np.ndarray]`): a list of numpy 2D-arrays, each
     representing a partial
 * **outfile** (`str`): path to save the sampled partials. Supported formats:
     `.mtx`, `.npy`         (See matrix_save for more information)
@@ -1097,7 +1091,7 @@ lt.util.partials_save_matrix(selected, 0.002, "packed.mtx")
 
 **Returns**
 
-&nbsp;&nbsp;&nbsp;&nbsp;(`tuple[list[np.ndarray], np.ndarray]`) a tuple (packed spectrum, matrix)
+&nbsp;&nbsp;&nbsp;&nbsp;(`Tuple[List[np.ndarray], np.ndarray]`) a tuple (packed spectrum, matrix)
 
 
 ---------
@@ -1120,13 +1114,13 @@ Stretch the partials in time by a given constant factor
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): a list of partials
+* **partials** (`List[np.ndarray]`): a list of partials
 * **factor** (`float`): float. a factor to multiply all times by
 * **inplace** (`bool`): modify partials in place (*default*: `False`)
 
 **Returns**
 
-&nbsp;&nbsp;&nbsp;&nbsp;(`list[np.ndarray]`) the stretched partials
+&nbsp;&nbsp;&nbsp;&nbsp;(`List[np.ndarray]`) the stretched partials
 
 
 ---------
@@ -1148,11 +1142,11 @@ Return the timerange of the partials: (begin, end)
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): the partials to query
+* **partials** (`List[np.ndarray]`): the partials to query
 
 **Returns**
 
-&nbsp;&nbsp;&nbsp;&nbsp;(`tuple[float, float]`) with the corresponding times in seconds
+&nbsp;&nbsp;&nbsp;&nbsp;(`Tuple[float, float]`) with the corresponding times in seconds
 
 
 ---------
@@ -1175,14 +1169,14 @@ Transpose the partials by a given interval
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): the partials to transpose
+* **partials** (`List[np.ndarray]`): the partials to transpose
 * **interval** (`float`): the interval in semitones
 * **inplace** (`bool`): if True, the partials are modified in place. Otherwise
     a new partial list is returned (*default*: `False`)
 
 **Returns**
 
-&nbsp;&nbsp;&nbsp;&nbsp;(`list[np.ndarray]`) the modified partial list, or the original list modified in place
+&nbsp;&nbsp;&nbsp;&nbsp;(`List[np.ndarray]`) the modified partial list, or the original list modified in place
 
 
 ---------
@@ -1206,7 +1200,7 @@ Plot the partials using matplotlib
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): a list of numpy arrays, each representing a
+* **partials** (`List[np.ndarray]`): a list of numpy arrays, each representing a
     partial
 * **downsample** (`int`): If > 1, only one every `downsample` breakpoints will
     be taken         into account. (*default*: `1`)
@@ -1267,7 +1261,7 @@ selected, _ = lt.util.select(partials, minbps=2, mindur=0.005,
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): a list of numpy 2D arrays, each array
+* **partials** (`List[np.ndarray]`): a list of numpy 2D arrays, each array
     representing a partial
 * **mindur** (`float`): min. duration (in seconds) (*default*: `0.0`)
 * **minamp** (`int`): min. amplitude (in dB) (*default*: `-120`)
@@ -1279,7 +1273,7 @@ selected, _ = lt.util.select(partials, minbps=2, mindur=0.005,
 
 **Returns**
 
-&nbsp;&nbsp;&nbsp;&nbsp;(`tuple[list[np.ndarray], list[np.ndarray]]`) (selected partials, discarded partials)
+&nbsp;&nbsp;&nbsp;&nbsp;(`Tuple[List[np.ndarray], List[np.ndarray]]`) (selected partials, discarded partials)
 
 
 ---------
@@ -1308,7 +1302,7 @@ Read a sound file.
 
 **Returns**
 
-&nbsp;&nbsp;&nbsp;&nbsp;(`tuple[np.ndarray, int]`) a tuple (samples:np.ndarray, sr:int)
+&nbsp;&nbsp;&nbsp;&nbsp;(`Tuple[np.ndarray, int]`) a tuple (samples:np.ndarray, sr:int)
 
 
 ---------
@@ -1343,7 +1337,7 @@ If the soundfile is multichannel, the indicated channel `chan` is returned.
 
 **Returns**
 
-&nbsp;&nbsp;&nbsp;&nbsp;(`tuple[np.ndarray, int]`) a tuple (samples:np.ndarray, sr:int)
+&nbsp;&nbsp;&nbsp;&nbsp;(`Tuple[np.ndarray, int]`) a tuple (samples:np.ndarray, sr:int)
 
 
 ---------
@@ -1431,7 +1425,7 @@ Write a list of partials as SDIF.
 
 **Args**
 
-* **partials** (`list[np.ndarray]`): a seq. of 2D arrays with columns [time freq
+* **partials** (`List[np.ndarray]`): a seq. of 2D arrays with columns [time freq
     amp phase bw]
 * **outfile** (`str`): the path of the sdif file
 * **labels**: a seq. of integer labels, or None to skip saving labels
