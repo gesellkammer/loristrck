@@ -1,8 +1,5 @@
 from typing import Any, Optional
 import numpy as np
-
-
-
 import logging
 logger: logging.Logger
 
@@ -26,7 +23,7 @@ def analyze(samples: np.ndarray,
             resolution: float,
             windowsize: float = -1,
             hoptime: float = -1,
-            freqrift: float = -1,
+            freqdrift: float = -1,
             sidelobe: float = -1,
             ampfloor: float = -90,
             croptime: float = -1,
