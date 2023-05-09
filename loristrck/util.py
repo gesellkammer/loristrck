@@ -408,7 +408,8 @@ def partials_sample(partials: list[np.ndarray],
                     t0: float = -1,
                     t1: float = -1,
                     maxactive=0,
-                    interleave=True):
+                    interleave=True
+                    ) -> np.ndarray | tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Samples the partials between times `t0` and `t1` with sampling period `dt`
 
@@ -530,8 +531,18 @@ def meanamp(partial: np.ndarray) -> float:
 
 def meanfreq(partial: np.ndarray, weighted=False) -> float:
     """
-    Returns the mean frequency of a partial, optionally
-    weighting this mean by the amplitude of each breakpoint
+    Returns the mean frequency of a partial
+
+    Optionally, frequencies can be weighted by the amplitude
+    of the breakpoint so that louder parts contribute more to the
+    average frequency as softer ones
+    
+    Args:
+        partial: the partial to evaluate
+        weighted: if True, weight the frequency by the amplitude
+
+    Returns:
+        the average frequency
     """
     if not weighted:
         return _core.meancol(partial, 1)
@@ -540,8 +551,15 @@ def meanfreq(partial: np.ndarray, weighted=False) -> float:
 
 def partial_energy(partial: np.ndarray) -> float:
     """
-    Integrate the partial amplitude over time. Serves as measurement
-    for the energy contributed by the partial.
+    Integrate the partial amplitude over time. 
+
+    Serves as measurement for the energy contributed by the partial.
+
+    Args:
+        partial: the partial to calculate its energy from
+
+    Returns:
+        the energy of this partial (the integral of amplitude over time)
 
     ### Example
 
@@ -565,6 +583,12 @@ def partial_energy(partial: np.ndarray) -> float:
 def db2amp(x: float) -> float:
     """
     Convert amplitude in dB to linear amplitude
+
+    Args:
+        x: the value in dB to convert to amplitude
+
+    Returns:
+        the amplitude of x as linear amplitude
     """
     return 10.0**(0.05*x)
 
@@ -572,6 +596,12 @@ def db2amp(x: float) -> float:
 def db2ampnp(x: np.ndarray) -> np.ndarray:
     """
     Convert amplitude in dB to linear amplitude for a numpy array
+
+    Args:
+        x: the dB values to convert
+
+    Returns:
+        the corresponding linear amplitudes
     """
     return 10.0**(0.05*x)
 
@@ -685,6 +715,13 @@ def loudest(partials: list[np.ndarray], N: int) -> list[np.ndarray]:
 
     The returned partials will be sorted by declining energy
     (integrated amplitude)
+
+    Args:
+        partials: the partials to select from
+        N: the number of partials to select
+
+    Returns:
+        the loudest N partials
     """
     sorted_partials = sorted(partials, key=partial_energy, reverse=True)
     return sorted_partials[:N]
@@ -1338,7 +1375,8 @@ def _m2n(midinote: float) -> str:
 
 
 def partials_at(partials: list[np.ndarray], t: float, maxcount=0, mindb=-120,
-                minfreq=10, maxfreq=22000):
+                minfreq=10, maxfreq=22000
+                ) -> list[np.ndarray]:
     """
     Sample the partials which satisfy the given conditions at time t
 
@@ -1352,7 +1390,8 @@ def partials_at(partials: list[np.ndarray], t: float, maxcount=0, mindb=-120,
         maxfreq: only partials with a freq. lower than this
 
     Returns:
-        the breakpoints at time t which satisfy the given conditions
+        the breakpoints at time t which satisfy the given conditions. Each breakpoint is 
+        a numpy array with [freq, amp, phase, bandwidth]
     """
     EPS = 0.000000001
     allbps = [partial_at(partial, t) for partial in partials]
