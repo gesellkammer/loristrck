@@ -21,7 +21,6 @@ import os
 import numpy as np
 import numpyx as npx
 import importlib
-import soundfile
 import logging
 import math
 import sys
@@ -825,6 +824,7 @@ def _wavwriter(outfile, sr=44100, bits=32, channels=1, fmt:str=None):
 
     assert fmt in ('wav', 'aif')
     subtype = 'FLOAT' if bits == 32 else 'DOUBLE'
+    import soundfile
     return soundfile.SoundFile(outfile, mode="w", samplerate=sr, channels=channels,
                                format=fmt, subtype=subtype)
 
@@ -845,7 +845,7 @@ def wavwrite(outfile: str, samples: np.ndarray, sr=44100, bits=32) -> None:
 
 
 def partials_save_matrix(partials: list[np.ndarray],
-                         outfile: str,
+                         outfile: str = '',
                          dt: float = None,
                          gapfactor=3.,
                          maxtracks=0,
@@ -873,7 +873,7 @@ def partials_save_matrix(partials: list[np.ndarray],
             At the cost of oversampling, a good value can be ksmps/sr, which results
             in 64/44100 = 0.0014 secs for typical values
         outfile: path to save the sampled partials. Supported formats: `.mtx`, `.npy`
-            (See matrix_save for more information)
+            (See matrix_save for more information). If not given, the matrix is not saved
         gapfactor: partials are packed with a gap = dt * gapfactor.
             It should be at least 2. A gap is a minimal amount of silence
             between the partials to allow for a fade out and fade in
@@ -897,7 +897,12 @@ def partials_save_matrix(partials: list[np.ndarray],
     gap = dt*gapfactor
     tracks, rest = pack(partials, gap=gap, maxtracks=maxtracks)
     mtx = partials_sample(tracks, dt=dt, maxactive=maxactive)
-    matrix_save(mtx, outfile, bits=32, metadata={'dt': dt, 'numTracks': len(tracks), 'gap': gap, 'maxActive': maxactive})
+    if outfile:
+        metadata = {'dt': dt, 
+                    'numTracks': len(tracks), 
+                    'gap': gap, 
+                    'maxActive': maxactive}
+        matrix_save(mtx, outfile, bits=32, metadata=metadata)
     return tracks, mtx
 
 
@@ -920,6 +925,7 @@ def sndread(path: str, contiguous=True
     Returns:
         a tuple (samples:np.ndarray, sr:int)
     """
+    import soundfile
     samples, sr = soundfile.read(path)
     if contiguous:
         samples = np.ascontiguousarray(samples)
@@ -943,6 +949,7 @@ def sndreadmono(path: str, chan: int = 0, contiguous=True
     Returns:
         a tuple (samples:np.ndarray, sr:int)
     """
+    import soundfile
     samples, sr = soundfile.read(path)
     if _numchannels(samples) > 1:
         samples = samples[:, chan]
@@ -964,6 +971,8 @@ def sndwrite(samples: np.ndarray, sr: int, path: str, encoding: str = None) -> N
             is expected, where XX represent the bits per sample (15, 24, 32, 64 for pcm,
             32 or 64 for float). Not all encodings are supported by all formats.
     """
+    import soundfile
+
     if isinstance(encoding, str):
         encoding = encoding[:-2], int(encoding[-2:])
     elif encoding is None:
