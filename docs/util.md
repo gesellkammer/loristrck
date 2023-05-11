@@ -1069,7 +1069,7 @@ of the form:
 
 ```python
 
-def partials_save_matrix(partials: list[np.ndarray], outfile: str, 
+def partials_save_matrix(partials: list[np.ndarray], outfile: str =, 
                          dt: float = None, gapfactor: float = 3.0, 
                          maxtracks: int = 0, maxactive: int = 0
                          ) -> tuple[list[np.ndarray], np.ndarray]
@@ -1098,7 +1098,8 @@ lt.util.partials_save_matrix(selected, 0.002, "packed.mtx")
 * **partials** (`list[np.ndarray]`): a list of numpy 2D-arrays, each
     representing a partial
 * **outfile** (`str`): path to save the sampled partials. Supported formats:
-    `.mtx`, `.npy`         (See matrix_save for more information)
+    `.mtx`, `.npy`         (See matrix_save for more information). If not given,
+    the matrix is not saved (*default*: ``)
 * **dt** (`float`): sampling period to sample the packed partials. If not given,
     it will be estimated with sensible defaults. To have more control
     over this stage, you can call estimate_sampling_interval yourself.
