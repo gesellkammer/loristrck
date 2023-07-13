@@ -18,9 +18,6 @@ except ImportError:
 
 
 def main(destfolder: str):
-    #utilFuncNames = util.__all__
-    #utilFuncs = [eval("util." + name) for name in utilFuncNames]
-    #docstr = doctools.generateDocsForFunctions(utilFuncs, title="loristrck.util", pretext=util.__doc__, startLevel=2)
     docstr = doctools.generateDocsForModule(util)
     utildocs = os.path.join(destfolder, "util.md")
     open(utildocs, "w").write(docstr)

@@ -22,8 +22,56 @@ lt.util.patials_render(partials, 44100, "selected.wav")
 ---------
 
 
-## PartialIndex
+| Class  | Description  |
+| :----  | :----------- |
+| `PartialIndex` | Create an index to accelerate finding partials |
 
+| Function  | Description  |
+| :-------  | :----------- |
+| `breakpoints_extend` | Given a list of breakpoints, extend each to form a partial of the given dur |
+| `breakpoints_to_chord` | Convert breakpoints to a list of (notename, freq, amplitude_db |
+| `chord_to_partials` | Generate partials from the given chord |
+| `concat` | Concatenate multiple Partials to produce a new one. |
+| `db2amp` | Convert amplitude in dB to linear amplitude |
+| `db2ampnp` | Convert amplitude in dB to linear amplitude for a numpy array |
+| `estimate_sampling_interval` | Estimate a sampling interval (dt) for this spectrum |
+| `filter` | Similar to select, but returns a generator yielding only selected partials |
+| `i2r` | Interval to ratio |
+| `kaiser_length` | Returns the length in samples of a Kaiser window from the desired main lobe width. |
+| `loudest` | Get the loudest N partials. |
+| `matrix_save` | Save the raw data mtx. |
+| `meanamp` | Returns the mean amplitude of a partial |
+| `meanfreq` | Returns the mean frequency of a partial |
+| `pack` | Pack non-simultenous partials into longer partials with silences in between. |
+| `partial_at` | Evaluates partial `p` at time `t` |
+| `partial_crop` | Crop partial at times t0, t1 |
+| `partial_energy` | Integrate the partial amplitude over time. |
+| `partial_fade` | Apply a fadein / fadeout to this partial so that the first and last |
+| `partial_sample_at` | Sample a partial `p` at given times |
+| `partial_sample_regularly` | Sample a partial `p` at regular time intervals |
+| `partial_timerange` | Return begin and endtime of partial |
+| `partials_at` | Sample the partials which satisfy the given conditions at time t |
+| `partials_between` | Return the partials present between t0 and t1 |
+| `partials_render` | Render partials as a soundfile |
+| `partials_sample` | Samples the partials between times `t0` and `t1` with sampling period `dt` |
+| `partials_save_matrix` | Packs short partials into longer partials and saves the result as a matrix |
+| `partials_stretch` | Stretch the partials in time by a given constant factor |
+| `partials_timerange` | Return the timerange of the partials: (begin, end) |
+| `partials_transpose` | Transpose the partials by a given interval |
+| `plot_partials` | Plot the partials using matplotlib |
+| `select` | Selects a seq. of partials matching the given conditions |
+| `sndread` | Read a sound file. |
+| `sndreadmono` | Read a sound file as mono. |
+| `sndwrite` | Write the samples to a soundfile |
+| `wavwrite` | Write samples to a wav-file (see also sndwrite) as float32 or float64 |
+| `write_sdif` | Write a list of partials as SDIF. |
+
+
+
+---------
+
+
+## PartialIndex
 ### 
 
 
@@ -46,6 +94,22 @@ partials list.
 
     The index is only valid as long as the original partial list is not
     modified
+
+
+---------
+
+
+**Summary**
+
+
+
+| Method  | Description  |
+| :------ | :----------- |
+| [__init__](#__init__) | - |
+| [partials_between](#partials_between) | Returns the partials which are defined within the given time range |
+
+
+---------
 
 
 ---------
@@ -95,6 +159,7 @@ Returns the partials which are defined within the given time range
 **Returns**
 
 &nbsp;&nbsp;&nbsp;&nbsp;(`list[np.ndarray]`) a list of partials present during the given time range
+
 
 
 ---------
