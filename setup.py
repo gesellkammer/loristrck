@@ -52,9 +52,8 @@ if sys.platform == 'darwin':
     append_if_exists(include_dirs, '/opt/local/include')
     append_if_exists(library_dirs, '/opt/local/lib')
     if os.path.exists('/opt/homebrew/Cellar/fftw'):
-        for entry in glob.glob('/opt/homebrew/Cellar/fftw/**', recursive=True):
-            print(entry)
-    append_if_exists('/opt/homebrew/Cellar/fftw/3.3.10_1')
+        for folder in glob.glob('/opt/homebrew/Cellar/fftw/*/include'):
+            include_dirs.append(folder)
     compile_args.append("-g")
     compile_args.append("-std=c++11")
     loris_base = os.path.join('src', 'loris', 'src')
