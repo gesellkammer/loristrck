@@ -6,7 +6,7 @@ build_and_store_wheels: &BUILD_AND_STORE_WHEELS
   wheels_artifacts:
     path: "wheelhouse/*"
 
-build_task_p310:
+build_task:
   name: Build macOS arm64 wheels.
   macos_instance:
     image: ghcr.io/cirruslabs/macos-ventura-xcode
