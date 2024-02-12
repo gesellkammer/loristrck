@@ -3,6 +3,7 @@ import sys
 import glob
 from setuptools import setup, Extension
 import shutil
+from pathlib import Path
 
 VERSION = '1.5.8'
 
@@ -51,9 +52,16 @@ if sys.platform == 'darwin':
     # Macports support
     append_if_exists(include_dirs, '/opt/local/include')
     append_if_exists(library_dirs, '/opt/local/lib')
+    append_if_exists(library_dirs, '/opt/homebrew/lib')
+    append_if_exists(include_dirs, '/opt/homebrew/include')
     if os.path.exists('/opt/homebrew/Cellar/fftw'):
-        for folder in glob.glob('/opt/homebrew/Cellar/fftw/*/include'):
-            include_dirs.append(folder)
+        p = Path('/opt/homebrew/Cellar/fftw')
+        for subfolder in p.glob("*"):
+            if (subfolder/"include").exists() and (subfolder/"lib").exists():
+                include_dirs.append((subfolder/"include").as_posix())
+                library_dirs.append((subfolder/"lib".as_posix/()))
+                break
+
     compile_args.append("-g")
     compile_args.append("-std=c++11")
     loris_base = os.path.join('src', 'loris', 'src')
