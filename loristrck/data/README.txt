@@ -1,0 +1,3 @@
+* In windows this folder should have the fftw library
+* In macos ...
+* In linux this folder should be empty (except for this readme)

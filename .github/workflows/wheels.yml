@@ -99,6 +99,7 @@ jobs:
             CIBW_SKIP: 'pp* *686* *-musllinux_*'
             CIBW_BEFORE_ALL_LINUX: yum install -y fftw-devel
             CIBW_BEFORE_ALL_MACOS: brew update; brew install fftw
+            CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
 
       - uses: actions/upload-artifact@v3
         with:

@@ -39,7 +39,7 @@ def python_arch() -> int:
 # Mac OSX
 ######################################
 
-package_data = {'loristrck': ['_core.pyi', 'py.typed']}
+package_data = {'loristrck': ['_core.pyi', 'py.typed', "data/*"]}
 
 print("Platform", sys.platform)
 
