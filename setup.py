@@ -57,9 +57,11 @@ if sys.platform == 'darwin':
     if os.path.exists('/opt/homebrew/Cellar/fftw'):
         p = Path('/opt/homebrew/Cellar/fftw')
         for subfolder in p.glob("*"):
-            if (subfolder/"include").exists() and (subfolder/"lib").exists():
-                include_dirs.append((subfolder/"include").as_posix())
-                library_dirs.append((subfolder/"lib".as_posix/()))
+            incdir = subfolder/"include"
+            libdir = subfolder/"lib"
+            if incdir.exists() and libdir.exists():
+                include_dirs.append(incdir.as_posix())
+                library_dirs.append(libdir.as_posix())
                 break
 
     compile_args.append("-g")
