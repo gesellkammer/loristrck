@@ -1,33 +1,23 @@
 container:
   image: python:latest
 
-test_task:
-
+build_task_p310:
+  name: Build macOS arm64 wheels.
   macos_instance:
-    image: ghcr.io/cirruslabs/macos-ventura-xcode:latest
+    image: ghcr.io/cirruslabs/macos-ventura-xcode
 
-  test_script: |
-    set -x
-    ls -l
-    python3 -c 'import platform; print(platform.machine(), platform.uname())'
-    python3 -m pip install loristrck
-    cd test
-    python3 test1.py -o test1-mac-arm64.wav
-    ls -l
-    cd ..
-        
-  binaries_artifacts:
-    path: test/*.wav
+  env:
+    PATH: /opt/homebrew/opt/python@3.10/bin:$PATH
+    CIBW_BUILD: 'cp39-* cp310-* cp311-*'
+    # We don't build for arm because the fftw lib is still not included
+    CIBW_ARCHS_MACOS: arm64
+    CIBW_SKIP: 'pp* *686* *-musllinux_*'
+    CIBW_BEFORE_ALL_MACOS: brew update; brew install fftw
+    CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
 
-
-
-#
-# OSX
-#
-#osx_task:
-#  auto_cancellation: true
-
-#
-#  check_script:
-#    - python3 -c "import platform; print(platform.machine(), platform.architecture())"
+  install_pre_requirements_script:
+    #- brew install python@3.10
+    #- ln -s python3 /opt/homebrew/opt/python@3.10/bin/python
+    - brew install fftw
+  <<: *BUILD_AND_STORE_WHEELS
 

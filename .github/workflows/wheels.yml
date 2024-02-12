@@ -94,7 +94,8 @@ jobs:
         uses: pypa/cibuildwheel@v2.12.0
         env:
             CIBW_BUILD: 'cp39-* cp310-* cp311-*'
-            CIBW_ARCHS_MACOS: 'x86_64 arm64'
+            # We don't build for arm because the fftw lib is still not included
+            CIBW_ARCHS_MACOS: 'x86_64'
             # CIBW_ARCHS_MACOS: x86_64 arm64
             CIBW_SKIP: 'pp* *686* *-musllinux_*'
             CIBW_BEFORE_ALL_LINUX: yum install -y fftw-devel
