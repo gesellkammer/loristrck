@@ -18,7 +18,7 @@ build_task:
 
   install_pre_requirements_script:
     - brew install python@3.10
-    - ln -s python3 /opt/homebrew/opt/python@3.10/bin/python
+    - ln -s /opt/homebrew/opt/python@3.10/bin/python python
     - brew install fftw
   <<: *BUILD_AND_STORE_WHEELS
 
