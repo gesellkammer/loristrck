@@ -3,7 +3,6 @@ import sndfileio
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-o', '--outfile', default='test1.wav')
-
 args = parser.parse_args()
 
 sndfile = "sound/musicbox-tchaikovsky-44k1-1.flac"
