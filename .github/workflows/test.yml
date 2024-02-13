@@ -28,7 +28,7 @@ jobs:
           python ./test-stretch.py --outfile "test-stretch-${{ matrix.os }}-${{ matrix.python-version }}.wav"
           ls -l testout
 
-          - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v3
         with:
           name: artifacts
           path: test/testout/*
