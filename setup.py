@@ -89,8 +89,6 @@ elif sys.platform == 'win32':
     include_dirs.append('tmp/fftw3')
     library_dirs.append('tmp/fftw3')
     loris_base = os.path.join('src', 'loriswin', 'src')
-    else:
-        possible_dirs.append("tmp/fftw64")
 
     compile_args += [
         "/std:c++14",
