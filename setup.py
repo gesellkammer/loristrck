@@ -86,16 +86,12 @@ elif sys.platform == 'win32':
     libs = ["libfftw3-3"]
     include_dirs.append('src/loriswin')
     # possible_dirs = ['/src/fftw', '/lib/fftw']
-    possible_dirs = []
+    include_dirs.append('tmp/fftw3')
+    library_dirs.append('tmp/fftw3')
     loris_base = os.path.join('src', 'loriswin', 'src')
-    if python_arch() == 32:
-        possible_dirs.append("tmp/fftw32")
     else:
         possible_dirs.append("tmp/fftw64")
-    for folder in possible_dirs:
-        append_if_exists(include_dirs, folder)
-        append_if_exists(library_dirs, folder)
-    # compile_args.append("-march-i686")
+
     compile_args += [
         "/std:c++14",
         #  "-DHAVE_CONFIG_H",

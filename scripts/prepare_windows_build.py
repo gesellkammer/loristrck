@@ -67,17 +67,18 @@ def zip_extract(zfile, outfolder):
         z.extractall(outfolder)
 
 
-def download_fftw(arch):
+def download_fftw(arch: int, outfolder: Path) -> None:
     if arch == 32:
         url = "ftp://ftp.fftw.org/pub/fftw/fftw-3.3.5-dll32.zip"
         outfile = tmp_dir / "fftw32.zip"
     else:
         url = "ftp://ftp.fftw.org/pub/fftw/fftw-3.3.5-dll64.zip"
         outfile = tmp_dir / "fftw64.zip"
-    fftw_folder = tmp_dir / f"fftw{arch}"
+    # fftw_folder = tmp_dir / f"fftw3"
+    fftw_folder = outfolder
     if fftw_folder.exists():
-        print(f">> fftw folder already present at {fftw_folder}, skipping")
-        return fftw_folder
+        print(f">> fftw folder already present at {fftw_folder}, removing")
+        shutil.rmtree(fftw_folder)
 
     print(f">> Downloading fftw from {url}")
     with closing(request.urlopen(url)) as r:
@@ -85,8 +86,7 @@ def download_fftw(arch):
             shutil.copyfileobj(r, f)
     print(f">> Saved fftw to {outfile}")
     zip_extract(outfile, fftw_folder)
-
-    return fftw_folder
+    assert fftw_folder.exits()
 
 
 def generate_lib_files(fftw_folder: Path, arch=32):
@@ -117,7 +117,9 @@ os.makedirs(tmp_dir, exist_ok=True)
 
 print(f">> Downloading fftw for {arch}")
 
-fftw_folder = download_fftw(arch)
+fftw_folder = tmp_dir / 'fftw3'
+download_fftw(arch, fftw_folder)
+
 if not fftw_folder.exists():
     print(f">> ERROR: did not find download. Expected folder: '{fftw_folder}'")
     print(">> exiting...")
