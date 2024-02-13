@@ -8,6 +8,7 @@ parser.add_argument('-o', '--outfile', default='test1.wav')
 args = parser.parse_args()
 
 outfolder = 'testout'
+os.makedirs(outfolder, exist_ok=True)
 
 sndfile = "sound/musicbox-tchaikovsky-44k1-1.flac"
 minpartialdur = 0.008
@@ -26,6 +27,8 @@ synthesized = lt.synthesize(stretched, sr)
 
 outfile = os.path.join(outfolder, args.outfile)
 print(f"Synthesizing stretched version: '{outfile}'")
+
+
 sndfileio.sndwrite(outfile, synthesized, sr=sr)
 print(f"Found {len(partials)} partials, reduced to {len(selection)}")
 
