@@ -18,9 +18,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install loristrck
+      - name: Install loristrck and test dependencies
         run: |
           python -m pip install loristrck
+          python -m pip install -r test/requirements.txt
 
       - name: Run Tests
         run: |
