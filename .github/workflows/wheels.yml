@@ -37,7 +37,6 @@ jobs:
           python scripts/prepare_windows_build.py
           tree tmp/fftw3 /F
 
-
       - name: Build wheels
         run: |
           python -m pip install wheel numpy setuptools cython
@@ -50,24 +49,12 @@ jobs:
 
       - name: Upload wheels
         env:
-          TWINE_USERNAME: Eduardo.Moguillansky
-          TWINE_PASSWORD: ${{ secrets.pypipass }}
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TWINETOKEN }}
         run: |
-          echo $TWINE_USERNAME
-          echo $TWINE_PASSWORD
           python -m pip install -U twine virtualenv
           twine upload --skip-existing dist/*.whl
         continue-on-error: true
-
-      #- name: Build wheels
-      #  run: |
-      #    python -m pip install wheel
-      #    python setup.py bdist_wheel
-      #- name: Upload wheels
-      #  uses: actions/upload-artifact@v3
-      #  with:
-      #    name: wheels
-      #    path: dist/*.whl
 
   build_wheels:
     name: Build python wheels on ${{ matrix.os }} 

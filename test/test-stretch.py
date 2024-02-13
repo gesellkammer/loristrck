@@ -2,6 +2,7 @@ import loristrck as lt
 import sndfileio
 import argparse
 import os
+import glob
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-o', '--outfile', default='test1.wav')
@@ -31,5 +32,8 @@ print(f">> Synthesizing stretched version: '{outfile}'")
 
 sndfileio.sndwrite(outfile, synthesized, sr=sr)
 print(f">> Found {len(partials)} partials, reduced to {len(selection)}")
+
+for f in glob.glob("*", recursive=True):
+    print(f"-- {f}")
 
 
