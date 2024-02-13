@@ -52,6 +52,6 @@ test_task:
     - cd test
     - python ./test-stretch.py --outfile test-stretch-macos-arm64.wav
 
-  test_artifacts:
+  testout_artifacts:
     path: testout/*
 
