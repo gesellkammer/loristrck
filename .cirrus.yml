@@ -54,5 +54,5 @@ test_task:
     - ls -l testout
 
   testout_artifacts:
-    path: testout/*
+    path: test/testout/*
 
