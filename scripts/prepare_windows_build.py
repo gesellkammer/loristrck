@@ -86,7 +86,7 @@ def download_fftw(arch: int, outfolder: Path) -> None:
             shutil.copyfileobj(r, f)
     print(f">> Saved fftw to {outfile}")
     zip_extract(outfile, fftw_folder)
-    assert fftw_folder.exits()
+    assert fftw_folder.exists()
 
 
 def generate_lib_files(fftw_folder: Path, arch=32):
