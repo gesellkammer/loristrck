@@ -10,14 +10,15 @@ import zipfile
 
 
 if sys.platform != "win32":
-    print("This script is only needed in windows")
-    # sys.exit(0)
+    print(">> This script is only needed in windows")
+    sys.exit(-1)
 
 if not shutil.which("lib.exe"):
-    print("lib.exe is not in the path. Run this script inside a"
+    print(">> ERROR: lib.exe is not in the path. Run this script inside a"
           "'Developer Command Prompt for Visual Studio' or a"
           "'Developer Powershell...'. In both cases Visual Studio should"
           "be installed")
+    sys.exit(-1)
 
 root = Path(__file__).parent.parent
 loris_base = root / "src" / "loris"
@@ -111,18 +112,31 @@ def generate_lib_files(fftw_folder: Path, arch=32):
 create_cpp_tree(loris_win)
 
 # Create tmp dir to download the fftw dll binaries
+print(f">> Creating temp dir '{tmp_dir}'")
 os.makedirs(tmp_dir, exist_ok=True)
+
+print(f">> Downloading fftw for {arch}")
+
 fftw_folder = download_fftw(arch)
+if not fftw_folder.exists():
+    print(f">> ERROR: did not find download. Expected folder: '{fftw_folder}'")
+    print(">> exiting...")
+    sys.exit(-1)
+
+
+fftwdll = fftw_folder / "libfftw3-3.dll"
+print(f">> Downloaded fftw to folder '{fftw_folder}'. fftw dll: {fftwdll}")
+if not fftwdll.exists():
+    print(f">> ERROR: Did not find dll at '{fftwdll}'")
+    print(f">> ----------------- Contents of folder {fftw_folder}")
+    ls(fftw_folder)
+    print(">> exiting...")
+    sys.exit(-1)
 
 # The data folder is part of the distributed files and will
 # store the fftw .dll
 data_folder = fftw_folder.parent.parent / "loristrck/data"
 os.makedirs(data_folder, exist_ok=True)
-fftwdll = fftw_folder / "libfftw3-3.dll"
-if not fftwdll.exists():
-    print(f"Did not find {fftwdll}, but it does not exist")
-    ls(fftw_folder)
-    sys.exit(-1)
 
 # We copy the .dll file for runtime
 shutil.copy(fftwdll, data_folder)
