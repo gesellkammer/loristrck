@@ -26,9 +26,10 @@ compile_args = ['-DMERSENNE_TWISTER',
                 '-DHAVE_FFTW3_H']
 
 
-def append_if_exists(seq, folder):
-    if os.path.exists(folder):
-        seq.append(folder)
+def append_if_exists(seq: list[str], folders: list[str]):
+    for folder in folders:
+        if os.path.exists(folder):
+            seq.append(folder)
 
 
 def python_arch() -> int:
@@ -47,13 +48,8 @@ print("Platform", sys.platform)
 if sys.platform == 'darwin':
     libs = ["m", "fftw3"]
     include_dirs.append('src/loris')
-    include_dirs.append('/usr/local/include')
-    library_dirs.append('/usr/local/lib')
-    # Macports support
-    append_if_exists(include_dirs, '/opt/local/include')
-    append_if_exists(library_dirs, '/opt/local/lib')
-    append_if_exists(library_dirs, '/opt/homebrew/lib')
-    append_if_exists(include_dirs, '/opt/homebrew/include')
+    append_if_exists(include_dirs, ['/opt/homebrew/include', '/opt/local/include', '/usr/local/include'])
+    append_if_exists(library_dirs, ['/opt/homebrew/lib', '/opt/local/lib', '/usr/local/lib'])
     if os.path.exists('/opt/homebrew/Cellar/fftw'):
         p = Path('/opt/homebrew/Cellar/fftw')
         for subfolder in p.glob("*"):
@@ -77,9 +73,6 @@ elif sys.platform == 'linux':
     include_dirs.append('src/loris')
     loris_base = os.path.join('src', 'loris', 'src')
 
-######################################
-# Windows
-######################################
 elif sys.platform == 'win32':
     assert os.path.exists('src/loriswin'), (
         "Source files for windows not found. From a 'Developer Command Prompt' "
@@ -170,7 +163,6 @@ setup(
         'numpy>=1.8',
         'numpyx',
         'soundfile',
-        # 'sounddevice',
         'pysdif3>=0.6.0'
     ],
     package_data=package_data,

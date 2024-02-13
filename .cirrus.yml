@@ -1,30 +1,19 @@
-build_and_store_wheels: &BUILD_AND_STORE_WHEELS
-  install_cibuildwheel_script:
-    - python3.10 -m pip install cibuildwheel==2.16.5
-  run_cibuildwheel_script:
-    - cibuildwheel
-  wheels_artifacts:
-    path: "wheelhouse/*"
 
-build_task:
-  name: Build macOS arm64 wheels.
+
+test_task:
+  name: Test macOS arm64 installed via pip.
   macos_instance:
     image: ghcr.io/cirruslabs/macos-ventura-xcode
 
   env:
     PATH: /opt/homebrew/opt/python@3.10/bin:$PATH
-    CIBW_ARCHS_MACOS: arm64
-    CIBW_BUILD: 'cp39-* cp310-* cp311-*'
-    CIBW_ARCHS_MACOS: 'arm64'
-    CIBW_SKIP: 'pp* *686*'
-    CIBW_BUILD_VERBOSITY: 2
-    # CIBW_BEFORE_ALL_MACOS: brew update; brew install fftw
-    CIBW_BEFORE_ALL_MACOS: brew install fftw
-    CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
 
-  install_pre_requirements_script:
+  setup_script:
     - brew install python@3.10
-    # - ln -s /opt/homebrew/opt/python@3.10/bin/python python
-    # - brew install fftw
-  <<: *BUILD_AND_STORE_WHEELS
+    - python --version
+    - python -m pip install loristrck sndfileio
+
+  test_script:
+    - cd test
+    - python ./test-stretch.py --outfile test-stretch-macos-arm64.wav
 
