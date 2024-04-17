@@ -5,7 +5,7 @@ from setuptools import setup, Extension
 import shutil
 from pathlib import Path
 
-VERSION = '1.6.1'
+VERSION = '1.6.2'
 
 class get_numpy_include(str):
     def __str__(self):
@@ -135,7 +135,7 @@ print("Package Data", package_data)
 
 setup(
     name='loristrck',
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     ext_modules = [
         Extension(
             'loristrck._core',
@@ -157,7 +157,7 @@ setup(
         'numpy>=1.8',
         'numpyx',
         'soundfile',
-        'pysdif3>=0.6.0'
+        'pysdif3>=1.0.0'
     ],
     package_data=package_data,
     # include_package_data=bool(package_data),
