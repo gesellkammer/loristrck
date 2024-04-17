@@ -1,7 +1,8 @@
 build_and_store_wheels: &BUILD_AND_STORE_WHEELS
-  install_cibuildwheel_script:
+  cibuildwheel_script:
+    - python3 -m venv .venv
+    - source .venv/bin/activate
     - python3 -m pip install cibuildwheel==2.16.5
-  run_cibuildwheel_script:
     - cibuildwheel
   wheels_artifacts:
     path: "wheelhouse/*"
@@ -31,6 +32,7 @@ macos_arm64_task:
   upload_wheels_script:
     - echo "$TWINE_USERNAME"
     - echo "$TWINE_PASSWORD"
+    - source .venv/bin/activate
     - python3 -m pip install -U twine virtualenv
     - python3 -m twine upload --skip-existing wheelhouse/*.whl
 
@@ -45,10 +47,13 @@ test_task:
 
   setup_script:
     - brew install python3
+    - python3 -m venv .test
+    - source .test/bin/activate
     - python3 --version
     - python3 -m pip install loristrck sndfileio
 
   test_script:
+    - source .test/bin/activate
     - cd test
     - python3 ./test-stretch.py --outfile test-stretch-macos-arm64.wav
     - ls -l testout
