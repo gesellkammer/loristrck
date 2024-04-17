@@ -7,7 +7,6 @@ build_and_store_wheels: &BUILD_AND_STORE_WHEELS
   wheels_artifacts:
     path: "wheelhouse/*"
 
-
 macos_arm64_task:
   name: Build macOS arm64 wheels.
   macos_instance:
@@ -45,15 +44,12 @@ test_task:
   env:
     PATH: /opt/homebrew/opt/python@3.10/libexec/bin:$PATH
 
-  setup_script:
+  test_script:
     - brew install python3   # at the moment this installs 3.12
     - python3 -m venv .test
     - source .test/bin/activate
     - python3 --version
     - python3 -m pip install loristrck sndfileio
-
-  test_script:
-    - source .test/bin/activate
     - cd test
     - python3 ./test-stretch.py --outfile test-stretch-macos-arm64.wav
     - ls -l testout
