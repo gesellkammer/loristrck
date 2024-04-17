@@ -31,7 +31,7 @@ macos_arm64_task:
   upload_wheels_script:
     - echo "$TWINE_USERNAME"
     - echo "$TWINE_PASSWORD"
-    - python -m pip install -U twine virtualenv
+    - python3 -m pip install -U twine virtualenv
     - twine upload --skip-existing wheelhouse/*.whl
 
 
@@ -45,12 +45,12 @@ test_task:
 
   setup_script:
     - brew install python@3.10
-    - python --version
-    - python -m pip install loristrck sndfileio
+    - python3 --version
+    - python3 -m pip install loristrck sndfileio
 
   test_script:
     - cd test
-    - python ./test-stretch.py --outfile test-stretch-macos-arm64.wav
+    - python3 ./test-stretch.py --outfile test-stretch-macos-arm64.wav
     - ls -l testout
 
   testout_artifacts:
