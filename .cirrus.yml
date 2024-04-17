@@ -21,8 +21,9 @@ macos_arm64_task:
     CIBW_BEFORE_ALL_MACOS: brew install fftw
     CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
     TWINE_USERNAME: __token__
-    TWINE_PASSWORD: pypi-AgEIcHlwaS5vcmcCJDEzMzEzM2QxLTNkNTMtNDgwMy05MjNhLTA5NmI3NDUzMzM4MAACKlszLCJkNWJkZjZhNi1hMzFmLTRiOWQtYWYyOC00NWEzYjg5YjIyMzAiXQAABiAGCu8B2WAjgjcTT6yPr0DYC1HCaFZA-bn2INCw_ypcYQ
-
+    # twine24.4, encrypted by cirrus at the repo level, it is only valid for this repository
+    TWINE_PASSWORD: ENCRYPTED[e00ba740bee1f98bb9a7abade7bf0bd5cf98df2340f40f1b6e960c8b250280864d7fd4f4e079b8d5ca60065bdc7ea1ea]
+    
   install_pre_requirements_script:
     - brew install python3
     # - ln -s python /opt/homebrew/opt/python@3.10/bin/python
