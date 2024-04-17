@@ -99,6 +99,7 @@ jobs:
       - name: Upload wheels
         env:
           TWINE_USERNAME: __token__
+          # twine24.4
           TWINE_PASSWORD: ${{ secrets.TWINETOKEN }}
         run: |
             echo $TWINE_USERNAME
