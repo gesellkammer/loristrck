@@ -10,7 +10,9 @@ prune src/loris/scripting
 prune src/loris/test
 prune src/loris/utils
 
-recursive-include loristrck *.py *.pyx *.pxd
+recursive-include loristrck *.py *.pyx *.pxd *.pyi
+
+include loristrck/py.typed
 
 recursive-include scripts *
 prune scripts/.mypy_cache
