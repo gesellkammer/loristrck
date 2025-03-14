@@ -9,12 +9,22 @@ import sys
 if sys.platform == "win32":
     _fftwdll = "libfftw3-3.dll"
     _datadir = os.path.join(os.path.split(__file__)[0], "data")
-    if not os.path.exists(os.path.join(_datadir, _fftwdll):
+    if not os.path.exists(os.path.join(_datadir, _fftwdll)):
         raise IOError(f"{_fftwdll} not found. If you are not running loristrck "
-                      f"from a wheel, run scripts/prepare_windows_build.py to " 
+                      f"from a wheel, run scripts/prepare_windows_build.py to "
                       f"download the fftw dll to {_datadir} where it can be found")
     os.add_dll_directory(_datadir)
 
-from ._core import *
+from ._core import (
+    analyze,
+    kaiserWindowLength,
+    read_sdif,
+    newPartialList,
+    read_aiff,
+    synthesize,
+    estimatef0,
+    meancol,
+    meancolw,
+)
 from . import util
 from .util import write_sdif

@@ -42,9 +42,9 @@ jobs:
           python -m pip install wheel numpy setuptools cython
           python setup.py bdist_wheel
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: cibw-wheels-${{ matrix.os }}-${{ matrix.python-version }}-${{ strategy.job-index }}
           path: dist/*.whl
 
       - name: Upload wheels
@@ -109,8 +109,9 @@ jobs:
       #      CIBW_BEFORE_ALL_MACOS: brew update; brew install fftw
       #      CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
 
       - name: Upload wheels

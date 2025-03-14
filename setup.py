@@ -5,7 +5,7 @@ from setuptools import setup, Extension
 import shutil
 from pathlib import Path
 
-VERSION = '1.6.5'
+VERSION = '1.6.8'
 
 class get_numpy_include(str):
     def __str__(self):
