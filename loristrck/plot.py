@@ -1,19 +1,30 @@
+from __future__ import annotations
+
 import numpy as np
 import sys
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 import matplotlib.cm
 from .common import *
-from functools import lru_cache
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
 
 
 _EPS = sys.float_info.epsilon
 
 
-def amp2db_np(amp, out=None):
-    # type: (np.ndarray) -> np.ndarray
+def amp2db_np(amp: np.ndarray, out: np.ndarray | None = None) -> np.ndarray:
     """
-    convert amp to dB for arrays
+    Convert amp to dB for arrays
+
+    Args:
+        amp: The amplitude array to convert.
+        out: Optional output array to store the result.
+
+    Returns:
+        The converted amplitude array in dB.
     """
     if out is None:
         X = np.maximum(amp, _EPS)
@@ -24,7 +35,6 @@ def amp2db_np(amp, out=None):
     return X
 
 
-# @lru_cache(maxsize=4000)
 def _segmentsZ(partial, downsample=1, exp=1.0, avg=True):
     X = partial[:,0]
     Y = partial[:,1]
@@ -43,7 +53,7 @@ def _segmentsZ(partial, downsample=1, exp=1.0, avg=True):
     return segments, Z
 
 
-def _plotpartial(ax, partial, downsample=1, cmap='inferno', exp=1, linewidth=1, avg=True):
+def _plotpartial(ax: Axes, partial: np.ndarray, downsample=1, cmap='inferno', exp=1.0, linewidth=1, avg=True):
     # columns: time, freq, amp, phase, bw
     segments, Z = _segmentsZ(partial, downsample=downsample, exp=exp, avg=avg)
     lc = LineCollection(segments, cmap=cmap)
@@ -52,14 +62,29 @@ def _plotpartial(ax, partial, downsample=1, cmap='inferno', exp=1, linewidth=1, 
     lc.set_linewidth(linewidth)
     lc.set_alpha(None)
     ax.add_collection(lc, autolim=True)
-    
 
-def plot_partials(sp, downsample=1, cmap='inferno', exp=1, 
-                  linewidth=1, ax=None, avg=True):
+
+def plot_partials(sp: list[np.ndarray],
+                  downsample: int = 1,
+                  cmap='inferno',
+                  exp: float = 1.,
+                  linewidth: float = 1,
+                  ax: Axes | None = None,
+                  avg: bool = True) -> Axes:
     """
     Plot the partials in sp using matplotlib
 
-    Returns a matplotlib axes
+    Args:
+        sp: list of partials
+        downsample: downsample factor
+        cmap: colormap
+        exp: exponent applied to amplitudes
+        linewidth: line width
+        ax: matplotlib axes to use
+        avg: average
+
+    Returns:
+        (Axes) The matplotlib axes used
     """
     downsample = max(downsample, 1)
     if ax is None:

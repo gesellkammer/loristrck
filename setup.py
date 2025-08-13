@@ -5,7 +5,9 @@ from setuptools import setup, Extension
 import shutil
 from pathlib import Path
 
-VERSION = '1.7.0'
+
+VERSION = '1.7.2'
+
 
 class get_numpy_include(str):
     def __str__(self):
@@ -41,7 +43,7 @@ def python_arch() -> int:
 # Mac OSX
 ######################################
 
-package_data = {'loristrck': ['_core.pyi', 'py.typed', "data/*"]}
+package_data = {'loristrck': ['__init__.pyi', '_core.pyi', 'py.typed', "data/*"]}
 
 print("Platform", sys.platform)
 

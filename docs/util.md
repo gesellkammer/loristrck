@@ -24,7 +24,7 @@ lt.util.patials_render(partials, 44100, "selected.wav")
 
 | Class  | Description  |
 | :----  | :----------- |
-| `PartialIndex` | Create an index to accelerate finding partials |
+|  [PartialIndex](#partialindex) | Create an index to accelerate finding partials |
 
 | Function  | Description  |
 | :-------  | :----------- |
