@@ -1,3 +1,6 @@
-def db2amp(x):
-    # type: (float) -> float
-    return 10.0 ** (0.05 * x)
+"""Deprecated compat shim. Use loristrck.util.db2amp instead."""
+
+from .util import db2amp as db2amp
+from .util import db2ampnp as db2ampnp
+
+__all__ = ["db2amp", "db2ampnp"]

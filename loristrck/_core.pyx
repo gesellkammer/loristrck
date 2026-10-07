@@ -10,8 +10,7 @@ cimport cython
 from cython.operator cimport dereference as deref, preincrement as inc
 import numpy as np
 cimport numpy as _np
-from numpy.math cimport INFINITY
-from libc.math cimport ceil, sqrt, pi, pow
+from libc.math cimport ceil, sqrt, pi, pow, INFINITY
 import logging
 import sys
 import os
@@ -86,45 +85,58 @@ def analyze(double[::1] samples not None, double sr, double resolution, double w
         partial, each breakpoint consists of 5 values: time, freq, amplitude, phase and bandwidth
 
     """
+    if samples.size == 0:
+        raise ValueError("samples is empty")
     if windowsize < 0:
         windowsize = resolution * 2  # original Loris behaviour
     cdef loris.Analyzer* an = new loris.Analyzer(resolution, windowsize)
-    if hoptime > 0:
-        logger.debug("Setting hoptime for Analyzer: {0}".format(hoptime))
-        an.setHopTime(hoptime)
-    if freqdrift > 0:
-        an.setFreqDrift(freqdrift)
-    if sidelobe > 0:
-        an.setSidelobeLevel( sidelobe )
-    if croptime > 0:
-        an.setCropTime( croptime )
-    an.setAmpFloor(ampfloor)
-    if residuebw >= 0:
-        if convergencebw >= 0:
-            logger.error("Only one of residuebw or convergencebw can be set, not both")
-        an.storeResidueBandwidth(residuebw)
-    elif convergencebw >= 0:
-        an.storeConvergenceBandwidth(convergencebw)
+    cdef int winSamples
+    cdef double* samples_begin
+    cdef double* samples_end
+    cdef loris.PartialList partials
+    try:
+        if hoptime > 0:
+            logger.debug("Setting hoptime for Analyzer: {0}".format(hoptime))
+            an.setHopTime(hoptime)
+        if freqdrift > 0:
+            an.setFreqDrift(freqdrift)
+        if sidelobe > 0:
+            an.setSidelobeLevel(sidelobe)
+        if croptime > 0:
+            an.setCropTime(croptime)
+        an.setAmpFloor(ampfloor)
+        if residuebw >= 0:
+            if convergencebw >= 0:
+                raise ValueError("Only one of residuebw or convergencebw can be set, not both")
+            an.storeResidueBandwidth(residuebw)
+        elif convergencebw >= 0:
+            an.storeConvergenceBandwidth(convergencebw)
 
-    cdef int winSamples = kaiserWindowLength(an.windowWidth(), sr, an.sidelobeLevel())
-    logger.info(f"analysis: windowsize={an.windowWidth()}Hz ({winSamples} samples), hop={int(an.hopTime()*1000)}ms, freqdrift={an.freqDrift()}Hz")
+        winSamples = kaiserWindowLength(an.windowWidth(), sr, an.sidelobeLevel())
+        logger.info(f"analysis: windowsize={an.windowWidth()}Hz ({winSamples} samples), "
+                    f"hop={int(an.hopTime() * 1000)}ms, freqdrift={an.freqDrift()}Hz")
 
-    cdef double *samples_begin = &(samples[0])              #<double*> _np.PyArray_DATA(samples)
-    cdef double *samples_end = &(samples[<int>(samples.size-1)]) #samples0 + <int>(samples.size - 1)
-    an.analyze(samples_begin, samples_end, sr)
-    cdef loris.PartialList partials = an.partials()
-    # cdef loris.PartialList partials = an.analyze(samples_begin, samples_end, sr)
-    del an
-    cdef loris.SdifFile* sdiffile
+        samples_begin = &(samples[0])
+        samples_end = &(samples[samples.size - 1])
+        an.analyze(samples_begin, samples_end, sr)
+        partials = an.partials()
+    finally:
+        del an
+    cdef loris.SdifFile* sdiffile = NULL
     cdef string filename
+    cdef bytes outfile_bytes
     if outfile is not None:
-        if not isinstance(outfile, bytes):
-            outfile = outfile.encode("ASCII", errors="ignore")
-        filename = string(<char*>outfile)
+        if isinstance(outfile, bytes):
+            outfile_bytes = outfile
+        else:
+            outfile_bytes = str(outfile).encode("ASCII", errors="ignore")
+        filename = string(<char*>outfile_bytes, len(outfile_bytes))
         sdiffile = new loris.SdifFile(partials.begin(), partials.end())
-        with nogil:
-            sdiffile.write(filename)
-        del sdiffile
+        try:
+            with nogil:
+                sdiffile.write(filename)
+        finally:
+            del sdiffile
     out = PartialList_toarray(&partials)
     return out
 
@@ -176,15 +188,14 @@ cdef _np.ndarray Partial_toarray(loris.Partial* p):
     cdef int numbps = p.numBreakpoints()
     cdef _np.ndarray [SAMPLE_t, ndim=2] arr = np.empty((numbps, 5), dtype='float64')
     cdef double *data = <double *>arr.data
-    cdef loris.Partial_Iterator it  = p.begin()
+    cdef loris.Partial_Iterator it = p.begin()
     cdef loris.Partial_Iterator end = p.end()
     cdef loris.Breakpoint *bp
-    cdef double time
     cdef int i = 0
     cdef double *row
     while it != end:
         bp = &(it.breakpoint())
-        row = data + 5*i
+        row = data + 5 * i
         row[0] = it.time()
         row[1] = bp.frequency()
         row[2] = bp.amplitude()
@@ -193,7 +204,7 @@ cdef _np.ndarray Partial_toarray(loris.Partial* p):
         i += 1
         inc(it)
     if i != numbps:
-        print("ERROR: numbps=%d,  i=%d" % (numbps, i))
+        logger.error("Partial_toarray: numbps=%d, i=%d", numbps, i)
     return arr
 
 
@@ -208,11 +219,12 @@ cdef loris.Partial* newPartial_fromarray(_np.ndarray[SAMPLE_t, ndim=2] a):
     cdef int numbps = len(a)
     cdef loris.Breakpoint *bp
     cdef double *row
-    cdef double t
     cdef int i
     if a.shape[1] != 5:
+        del p
         return NULL
-    if a[0, 0] < 0:
+    if numbps == 0 or a[0, 0] < 0:
+        del p
         return NULL
     if a.flags.c_contiguous:
         row = (<double *>a.data)
@@ -243,27 +255,35 @@ def read_sdif(path):
         frequency, amplitude, phase and bandwidth). `labels` is list of
         the labels for each partial
     """
-    cdef loris.SdifFile* sdif
+    cdef loris.SdifFile* sdif = NULL
     cdef loris.PartialList partials
-    path = os.path.abspath(os.path.expanduser(path))
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"read_sdif: {path} not found")
-    if not isinstance(path, bytes):
-        path = path.encode("ASCII", errors="ignore")
-    cdef string filename = string(<char*>path)
-    sdif = new loris.SdifFile(filename)
-    partials = sdif.partials()
-    cdef loris.PartialListIterator p_it = partials.begin()
-    cdef loris.PartialListIterator p_end = partials.end()
+    cdef string filename
+    cdef bytes path_bytes
+    cdef loris.PartialListIterator p_it
+    cdef loris.PartialListIterator p_end
     cdef loris.Partial partial
     cdef list matrices = []
     cdef list labels = []
-    while p_it != p_end:
-        partial = deref(p_it)
-        matrices.append(Partial_toarray(&partial))
-        labels.append(partial.label())
-        inc(p_it)
-    del sdif
+    path = os.path.abspath(os.path.expanduser(path))
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"read_sdif: {path} not found")
+    if isinstance(path, bytes):
+        path_bytes = path
+    else:
+        path_bytes = str(path).encode("ASCII", errors="ignore")
+    filename = string(<char*>path_bytes, len(path_bytes))
+    sdif = new loris.SdifFile(filename)
+    try:
+        partials = sdif.partials()
+        p_it = partials.begin()
+        p_end = partials.end()
+        while p_it != p_end:
+            partial = deref(p_it)
+            matrices.append(Partial_toarray(&partial))
+            labels.append(partial.label())
+            inc(p_it)
+    finally:
+        del sdif
     return (matrices, labels)
 
 
@@ -294,7 +314,8 @@ cdef class PartialListW:
             labels (list[int]): It should be of the same length of
                 this partials list
         """
-        assert _isiterable(labels)
+        if not _isiterable(labels):
+            raise TypeError(f"labels must be iterable, got {type(labels)}")
         PartialList_setlabels(self.thisptr, labels)
 
     def toarray(self):
@@ -350,23 +371,33 @@ def _write_sdif(partials, outfile, labels=None, rbep=True):
         None
 
     """
-    assert _isiterable(partials)
+    if not _isiterable(partials):
+        raise TypeError(f"partials must be iterable, got {type(partials)}")
     cdef loris.PartialList *ps = PartialList_fromdata(partials)
-    logger.debug("Converted to PartialList. Num. partials: %d", ps.size())
-    cdef loris.SdifFile* sdiffile = new loris.SdifFile(ps.begin(), ps.end())
-    if not isinstance(outfile, bytes):
-        outfile = outfile.encode("ASCII", errors="inore")
-    cdef string filename = string(<char*>outfile)
-    cdef int use_rbep = int(rbep)
-    logger.debug("Writing SDIF")
-    with nogil:
-        if use_rbep:
-            sdiffile.write(filename)
+    cdef loris.SdifFile* sdiffile = NULL
+    cdef string filename
+    cdef bytes outfile_bytes
+    cdef int use_rbep
+    try:
+        logger.debug("Converted to PartialList. Num. partials: %d", ps.size())
+        sdiffile = new loris.SdifFile(ps.begin(), ps.end())
+        if isinstance(outfile, bytes):
+            outfile_bytes = outfile
         else:
-            sdiffile.write1TRC(filename)
-    logger.debug("Finished writing SDIF")
-    del sdiffile
-    PartialList_destroy(ps)
+            outfile_bytes = str(outfile).encode("ASCII", errors="ignore")
+        filename = string(<char*>outfile_bytes, len(outfile_bytes))
+        use_rbep = int(rbep)
+        logger.debug("Writing SDIF")
+        with nogil:
+            if use_rbep:
+                sdiffile.write(filename)
+            else:
+                sdiffile.write1TRC(filename)
+        logger.debug("Finished writing SDIF")
+    finally:
+        if sdiffile != NULL:
+            del sdiffile
+        PartialList_destroy(ps)
 
 
 cdef void PartialList_destroy(loris.PartialList *partials):
@@ -379,12 +410,13 @@ cdef void PartialList_setlabels(loris.PartialList *partial_list, labels):
     cdef loris.PartialListIterator p_end = partial_list.end()
     cdef loris.Partial partial
     for label in labels:
-        assert isinstance(label, int)
+        if p_it == p_end:
+            raise ValueError("more labels than partials")
+        if not isinstance(label, int):
+            raise TypeError(f"label must be int, got {type(label)}")
         partial = deref(p_it)
         partial.setLabel(int(label))
         inc(p_it)
-        if p_it == p_end:
-            break
 
 
 cdef void PartialList_dump(loris.PartialList *plist):
@@ -448,29 +480,47 @@ def read_aiff(path):
         A tuple (audiodata, samplerate), where audiodata is a 1D numpy
         array of type double, holding the samples
     """
-    cdef loris.AiffFile* aiff = new loris.AiffFile(string(<char*>path))
-    cdef vector[double] samples = aiff.samples()
+    cdef loris.AiffFile* aiff = NULL
+    cdef string filename
+    cdef bytes path_bytes
+    cdef vector[double] samples
     cdef double[:] mono
     cdef vector[double].iterator it
-    cdef int channels = aiff.numChannels()
-    cdef double samplerate = aiff.sampleRate()
-    if channels != 1:
-        raise ValueError("Can only read mono files")
-    cdef int numFrames = aiff.numFrames()
-    mono = np.empty((numFrames,), dtype='float64')
-    it = samples.begin()
-    cdef int i = 0
-    while i < numFrames:
-        mono[i] = deref(it)
-        i += 1
-        inc(it)
-    del aiff
+    cdef int channels
+    cdef double samplerate
+    cdef int numFrames
+    cdef int i
+    if isinstance(path, bytes):
+        path_bytes = path
+    else:
+        path_bytes = str(path).encode("utf-8")
+    filename = string(<char*>path_bytes, len(path_bytes))
+    aiff = new loris.AiffFile(filename)
+    try:
+        channels = aiff.numChannels()
+        samplerate = aiff.sampleRate()
+        if channels != 1:
+            raise ValueError("Can only read mono files")
+        numFrames = aiff.numFrames()
+        samples = aiff.samples()
+        mono = np.empty((numFrames,), dtype='float64')
+        it = samples.begin()
+        i = 0
+        while i < numFrames:
+            mono[i] = deref(it)
+            i += 1
+            inc(it)
+    finally:
+        if aiff != NULL:
+            del aiff
     return np.asarray(mono), samplerate
 
 
 cdef object PartialList_timespan(loris.PartialList * partials):
     cdef loris.PartialListIterator it = partials.begin()
     cdef loris.PartialListIterator end = partials.end()
+    if it == end:
+        raise ValueError("empty partial list")
     cdef loris.Partial partial = deref(it)
     cdef double tmin = partial.startTime()
     cdef double tmax = partial.endTime()
@@ -527,49 +577,62 @@ def synthesize(partials, int samplerate, double fadetime=-1, double start=-1, do
         if end <= 0:
             end = t1
 
+    if not matrices:
+        raise ValueError("partials is empty")
     cdef unsigned int numsamples = int((end + fadetime) * samplerate) + 2
-    cdef vector[double] bufvector;
+    cdef vector[double] bufvector
     bufvector.resize(numsamples)
     cdef int i = 0
     cdef loris.Synthesizer *synthesizer = new loris.Synthesizer(samplerate, bufvector, fadetime)
-    cdef loris.Partial *lorispartial
+    cdef loris.Partial *lorispartial = NULL
     cdef double synth_t0 = INFINITY
     cdef double synth_t1 = 0
     cdef list errors = []
     cdef int numsynthesized = 0
     cdef int numrows
-    for m in matrices:
-        mt0 = m[0, 0]
-        if mt0 < 0:
-            errors.append("Partial with negative time found: %f" % mt0)
-            continue
-        numrows = m.shape[0]
-        mt1 = m[numrows-1, 0]
-        if mt0 >= start and mt1 <= end:
-            if mt0 < synth_t0:
-                synth_t0 = mt0
-            if mt1 > synth_t1:
-                synth_t1 = mt1
-            lorispartial = newPartial_fromarray(m)
-            if lorispartial != NULL:
-                synthesizer.synthesize(lorispartial[0])
-                numsynthesized += 1
-                del lorispartial
-    # cdef size_t synth_idx0 = int(synth_t0*samplerate)
-    # cdef size_t synth_idx1 = int(synth_t1*samplerate) + 1
-    cdef size_t startidx = int(start*samplerate)
-    cdef size_t endidx = int(end*samplerate)
-    cdef double[::1] buf = np.zeros((endidx-startidx,), dtype=float)
+    cdef size_t startidx
+    cdef size_t endidx
+    cdef double[::1] buf
     cdef int j = 0
-    if numsynthesized > 0:
-        for i in range(startidx, endidx):
-            buf[j] = bufvector[i]
-            j += 1
-    else:
-        logger.info("No partials were synthesized")
-    if len(errors) > 0:
-        logger.error("Errors where found durint synthesis: " + "\n".join(errors))
-    del synthesizer
+    try:
+        for m in matrices:
+            mt0 = m[0, 0]
+            if mt0 < 0:
+                errors.append("Partial with negative time found: %f" % mt0)
+                continue
+            numrows = m.shape[0]
+            mt1 = m[numrows - 1, 0]
+            if mt0 >= start and mt1 <= end:
+                if mt0 < synth_t0:
+                    synth_t0 = mt0
+                if mt1 > synth_t1:
+                    synth_t1 = mt1
+                lorispartial = newPartial_fromarray(m)
+                if lorispartial != NULL:
+                    try:
+                        synthesizer.synthesize(lorispartial[0])
+                    finally:
+                        del lorispartial
+                        lorispartial = NULL
+                    numsynthesized += 1
+        startidx = int(start * samplerate)
+        endidx = int(end * samplerate)
+        if endidx < startidx:
+            raise ValueError(f"end ({end}) must be >= start ({start})")
+        buf = np.zeros((endidx - startidx,), dtype=float)
+        j = 0
+        if numsynthesized > 0:
+            for i in range(startidx, endidx):
+                buf[j] = bufvector[i]
+                j += 1
+        else:
+            logger.info("No partials were synthesized")
+        if len(errors) > 0:
+            logger.error("Errors were found during synthesis: " + "\n".join(errors))
+    finally:
+        if lorispartial != NULL:
+            del lorispartial
+        del synthesizer
     return np.asarray(buf)
 
 
@@ -579,18 +642,14 @@ cdef object PartialList_estimatef0(loris.PartialList *plist,
     cdef double confidence = 0.9
     cdef loris.FundamentalFromPartials* est = new loris.FundamentalFromPartials(precission_in_hz)
     cdef double t0, t1
-    t0, t1 = PartialList_timespan(plist)
-    cdef loris.LinearEnvelope env = est.buildEnvelope(
-        plist.begin(), plist.end(), t0, t1, interval, minfreq, maxfreq, confidence)
-    out = LinearEnvelope_toarray(&env, t0, t1, interval)
-    del est
+    try:
+        t0, t1 = PartialList_timespan(plist)
+        env = est.buildEnvelope(
+            plist.begin(), plist.end(), t0, t1, interval, minfreq, maxfreq, confidence)
+        out = LinearEnvelope_toarray(&env, t0, t1, interval)
+    finally:
+        del est
     return (out, t0, t1)
-
-
-cdef void F0Estimate_getdata(loris.F0Estimate f0, double *out):
-    out[0] = f0.frequency()
-    out[1] = f0.confidence()
-    # return f0.frequency(), f0.confidence()
 
 
 cdef tuple PartialList_estimatef0_with_confidence(loris.PartialList *plist,
@@ -598,22 +657,28 @@ cdef tuple PartialList_estimatef0_with_confidence(loris.PartialList *plist,
                                                    double interval, double precission_in_hz=0.1):
     cdef loris.FundamentalFromPartials *est = new loris.FundamentalFromPartials(precission_in_hz)
     cdef double t0, t1
-    t0, t1 = PartialList_timespan(plist)
     cdef long i = 0
-    cdef long numelements = arange_numelements(t0, t1, interval)
+    cdef long numelements
     cdef double t
     cdef double[2] data
-    cdef double[:] freqs = np.zeros((numelements,), dtype='float64')
-    cdef double[:] confs = np.zeros((numelements,), dtype='float64')
-    data[0] = 0
-    data[1] = 0
-    while i < numelements:
-        t = t0 + i*interval
-        F0Estimate_getdata(est.estimateAt(plist.begin(), plist.end(), t, minfreq, maxfreq), &(data[0]))
-        freqs[i] = data[0]
-        confs[i] = data[1]
-        i += 1
-    del est
+    cdef double[:] freqs
+    cdef double[:] confs
+    try:
+        t0, t1 = PartialList_timespan(plist)
+        numelements = arange_numelements(t0, t1, interval)
+        freqs = np.zeros((numelements,), dtype='float64')
+        confs = np.zeros((numelements,), dtype='float64')
+        data[0] = 0
+        data[1] = 0
+        while i < numelements:
+            t = t0 + i * interval
+            loris.loristrck_estimate_f0(est, plist.begin(), plist.end(), t,
+                                        minfreq, maxfreq, &(data[0]))
+            freqs[i] = data[0]
+            confs[i] = data[1]
+            i += 1
+    finally:
+        del est
     return freqs, confs, t0, t1
 
 
@@ -653,8 +718,10 @@ def estimatef0(partials, double minfreq, double maxfreq, double interval):
 
     """
     cdef loris.PartialList *pl = PartialList_fromdata(partials)
-    out = PartialList_estimatef0_with_confidence(pl, minfreq, maxfreq, interval)
-    del pl
+    try:
+        out = PartialList_estimatef0_with_confidence(pl, minfreq, maxfreq, interval)
+    finally:
+        del pl
     return out
 
 
@@ -707,7 +774,9 @@ def meancolw(double[:, :] X, int col, int colw):
 
 
 cdef inline _np.ndarray EMPTY2D(int numrows, int numcols):
-    cdef _np.npy_intp *dims = [numrows, numcols]
+    cdef _np.npy_intp dims[2]
+    dims[0] = numrows
+    dims[1] = numcols
     return _np.PyArray_EMPTY(2, dims, _np.NPY_DOUBLE, 0)
 
 

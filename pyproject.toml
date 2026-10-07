@@ -1,10 +1,53 @@
 [build-system]
-
 requires = [
-	"setuptools>=42",
-	"wheel",
-	"cython>=3.0",
-	"numpy>=2.0"
+    "setuptools>=42",
+    "wheel",
+    "cython>=3.0",
+    "numpy>=2.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loristrck"
+version = "1.8.0"
+description = "A wrapper around the partial-tracking library Loris"
+readme = "README.rst"
+requires-python = ">=3.10"
+license = { text = "GPL-2.0-or-later" }
+authors = [{ name = "Eduardo Moguillansky", email = "eduardo.moguillansky@gmail.com" }]
+keywords = ["audio", "partial-tracking", "loris", "sdif"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Cython",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+]
+dependencies = [
+    "numpy>=1.26",
+    "numpyx",
+    "soundfile",
+    "pysdif3>=1.0.0",
 ]
 
-build-backend = "setuptools.build_meta"
+[project.optional-dependencies]
+plot = ["matplotlib"]
+play = ["csound"]
+test = ["pytest", "soundfile", "sndfileio"]
+docs = ["mkdocs-material", "emlib"]
+
+[project.urls]
+Homepage = "https://github.com/gesellkammer/loristrck"
+Documentation = "https://loristrck.readthedocs.io"
+
+[tool.setuptools.packages.find]
+include = ["loristrck*"]
+
+[tool.pytest.ini_options]
+testpaths = ["test/test_*.py"]

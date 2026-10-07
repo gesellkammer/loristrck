@@ -1,7 +1,8 @@
+import argparse
+import os
+
 import loristrck as lt
 import sndfileio
-import os
-import argarse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-o', '--outfile', default='stretched.mp3')
@@ -13,7 +14,7 @@ sndfile = "sound/musicbox-tchaikovsky-44k1-1.flac"
 outdir = 'soundout'
 minpartialdur = 0.008
 
-os.makedirs(outdir, exist_ok=)
+os.makedirs(outdir, exist_ok=True)
 
 
 samples, sr = sndfileio.sndread(sndfile)
@@ -30,7 +31,6 @@ if args.plot:
 stretched = lt.util.partials_stretch(selection, 20)
 print("Synthesizing stretched version")
 synthesized = lt.synthesize(stretched, sr)
-stretchedfile = os.path.join(outdir, outfile)
+stretchedfile = os.path.join(outdir, args.outfile)
 sndfileio.sndwrite(stretchedfile, synthesized, sr=sr)
 print(f"Found {len(partials)} partials, reduced to {len(selection)}")
-

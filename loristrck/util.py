@@ -19,11 +19,16 @@ lt.util.patials_render(partials, 44100, "selected.wav")
 from __future__ import annotations
 import os
 import numpy as np
-import numpyx as npx
+try:
+    from numpyx import numpyx as npx
+except ImportError:  # older flat-module layout
+    import numpyx as npx
 import importlib
+import importlib.util
 import logging
 import math
 import sys
+from typing import Any
 
 from . import _core
 
@@ -33,15 +38,20 @@ __all__ = [
     "concat",
     "partial_at",
     "partial_crop",
+    "partial_fade",
+    "partial_sample_at",
+    "partial_sample_regularly",
     "partials_sample",
     "meanamp",
     "meanfreq",
     "partial_energy",
     "select",
     "filter",
+    "loudest",
     "sndread",
     "sndreadmono",
     "sndwrite",
+    "wavwrite",
     "plot_partials",
     "kaiser_length",
     "partials_stretch",
@@ -49,9 +59,20 @@ __all__ = [
     "partials_between",
     "partials_at",
     "partials_render",
+    "partials_timerange",
+    "partial_timerange",
     "estimate_sampling_interval",
     "pack",
-    "partials_save_matrix"
+    "partials_save_matrix",
+    "matrix_save",
+    "breakpoints_to_chord",
+    "breakpoints_extend",
+    "chord_to_partials",
+    "db2amp",
+    "db2ampnp",
+    "i2r",
+    "write_sdif",
+    "PartialIndex",
 ]
 
 
@@ -192,9 +213,11 @@ def _join_track(partials: list[np.ndarray], fade: float) -> np.ndarray:
         but multiple non-simulatenous partials are concatenated and faded out,
         leaving gaps of silence in between
     """
-    assert fade > 0, f"fade should be > 0, got {fade}"
+    if fade <= 0:
+        raise ValueError(f"fade should be > 0, got {fade}")
     p = concat(partials, fade=fade, edgefade=fade)
-    assert p[-1, 2] == 0, f"concat failed to fade-out, last amp = {p[-1, 2]}"
+    if p[-1, 2] != 0:
+        raise RuntimeError(f"concat failed to fade-out, last amp = {p[-1, 2]}")
     return p
 
 
@@ -237,7 +260,8 @@ def pack(partials: list[np.ndarray],
         a tuple (tracks, unpacked partials)
 
     """
-    assert all(isinstance(p, np.ndarray) for p in partials)
+    if not all(isinstance(p, np.ndarray) for p in partials):
+        raise TypeError("partials must be a list of numpy arrays")
     mingap = 0.010
     if gap < mingap:
         gap = mingap
@@ -288,7 +312,7 @@ def partial_sample_regularly(p: np.ndarray, dt: float, t0=-1., t1=-1.) -> np.nda
         t0 = p[0, 0]
     if t1 <= 0:
         t1 = p[-1, 0]
-    times = np.arange(t0, t1+dt, t1)
+    times = np.arange(t0, t1+dt, dt)
     return partial_sample_at(p, times)
 
 
@@ -304,12 +328,14 @@ def partial_sample_at(p: np.ndarray, times: np.ndarray) -> np.ndarray:
     Returns:
         a partial (2D-array with columns times, freqs, amps, phases, bws)
     """
-    assert isinstance(times, np.ndarray)
+    if not isinstance(times, np.ndarray):
+        raise TypeError(f"times must be a numpy array, got {type(times)}")
     t0 = p[0, 0]
     t1 = p[-1, 0]
-    index0 = npx.searchsorted1(times, t0)
-    index1 = npx.searchsorted1(times, t1)-1
-    times = times[index0:index1]
+    mask = (times >= t0) & (times <= t1)
+    times = np.ascontiguousarray(times[mask])
+    if len(times) == 0:
+        return np.empty((0, 5), dtype=float)
     data = npx.table_interpol_linear(p, times)
     timescol = times.reshape((times.shape[0], 1))
     return np.hstack((timescol, data))
@@ -351,6 +377,8 @@ def _open_with_standard_app(path: str) -> None:
     and returns immediately
     """
     import subprocess
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"path not found: {path}")
     platform = sys.platform
     if platform == 'linux':
         subprocess.call(["xdg-open", path])
@@ -360,6 +388,11 @@ def _open_with_standard_app(path: str) -> None:
         subprocess.call(["open", path])
     else:
         raise RuntimeError(f"platform {platform} not supported")
+
+
+def open_with_standard_app(path: str) -> None:
+    """Public alias for _open_with_standard_app (kept for backwards compat)."""
+    return _open_with_standard_app(path)
 
 
 def partial_crop(p: np.ndarray, t0: float, t1: float) -> np.ndarray:
@@ -393,6 +426,12 @@ def partial_crop(p: np.ndarray, t0: float, t1: float) -> np.ndarray:
     idxs = times > t0
     idxs *= times < t1
     databetween = p[idxs]
+    if len(databetween) == 0:
+        t0c = max(t0, pt0)
+        t1c = min(t1, pt1)
+        if t0c >= t1c:
+            raise ValueError(f"Partial is not defined between {t0} and {t1}")
+        return partial_sample_at(p, np.array([t0c, t1c], dtype=np.float64))
     arrays = []
     if t0 < databetween[0, 0] and t0 > pt0:
         arrays.append(partial_sample_at(p, np.array([t0], dtype=np.float64)))
@@ -501,14 +540,18 @@ def partials_sample(partials: list[np.ndarray],
 def _limit_matrix(m, maxstreams):
     for i in range(len(m)):
         amps = m[i]
+        if len(amps) <= maxstreams:
+            continue
         idxs = np.argsort(amps)[:-maxstreams]
-        m[idxs] = 0
+        m[i, idxs] = 0
 
 
 def _limit_matrix_interleaved(m, maxstreams):
     numrows = m.shape[0]
     for i in range(numrows):
-        amps = m[i, 1::3]
+        amps = m[i, 2::3]
+        if len(amps) <= maxstreams:
+            continue
         idxs = np.argsort(amps)[:-maxstreams]
         amps[idxs] = 0
 
@@ -815,14 +858,16 @@ def matrix_save(data: np.ndarray, outfile: str, bits=32, metadata: dict[str, Any
         raise ValueError(f"Format {fmt} not recognized")
 
 
-def _wavwriter(outfile, sr=44100, bits=32, channels=1, fmt:str=None):
+def _wavwriter(outfile, sr=44100, bits=32, channels=1, fmt: str | None = None):
     """ Creates a soundfile.SoundFile with float32 or float64 format """
 
-    assert bits in (32, 64)
+    if bits not in (32, 64):
+        raise ValueError(f"bits must be 32 or 64, got {bits}")
     if fmt is None:
         fmt = os.path.splitext(outfile)[1][1:].lower()
 
-    assert fmt in ('wav', 'aif')
+    if fmt not in ('wav', 'aif', 'aiff'):
+        raise ValueError(f"format {fmt} not supported (expected 'wav' or 'aif')")
     subtype = 'FLOAT' if bits == 32 else 'DOUBLE'
     import soundfile
     return soundfile.SoundFile(outfile, mode="w", samplerate=sr, channels=channels,
@@ -893,8 +938,9 @@ def partials_save_matrix(partials: list[np.ndarray],
     """
     if dt is None:
         dt = estimate_sampling_interval(partials)
-    assert all(isinstance(p, np.ndarray) for p in partials)
-    gap = dt*gapfactor
+    if not all(isinstance(p, np.ndarray) for p in partials):
+        raise TypeError("partials must be a list of numpy arrays")
+    gap = dt * gapfactor
     tracks, rest = pack(partials, gap=gap, maxtracks=maxtracks)
     mtx = partials_sample(tracks, dt=dt, maxactive=maxactive)
     if outfile:
@@ -974,24 +1020,26 @@ def sndwrite(samples: np.ndarray, sr: int, path: str, encoding: str = None) -> N
     import soundfile
 
     if isinstance(encoding, str):
-        encoding = encoding[:-2], int(encoding[-2:])
+        encoding = encoding.lower()
     elif encoding is None:
         ext = os.path.splitext(path)[1].lower()
         encoding = {
-            '.wav':'float32',
-            '.aif':'float32',
-            '.aiff':'float32',
-            '.flac':'pcm24'
+            '.wav': 'float32',
+            '.aif': 'float32',
+            '.aiff': 'float32',
+            '.flac': 'pcm24',
         }.get(ext)
         if encoding is None:
             raise ValueError(f"format {ext} not supported")
+    else:
+        raise TypeError(f"encoding must be str or None, got {type(encoding)}")
 
     subtype = {
-        'float32':'FLOAT',
-        'float64':'DOUBLE',
-        'pcm16':'PCM_16',
-        'pcm24':'PCM_24',
-        'pcm32':'PCM_32',
+        'float32': 'FLOAT',
+        'float64': 'DOUBLE',
+        'pcm16': 'PCM_16',
+        'pcm24': 'PCM_24',
+        'pcm32': 'PCM_32',
     }.get(encoding)
 
     if subtype is None:
@@ -1035,7 +1083,8 @@ def plot_partials(partials: list[np.ndarray], downsample: int = 1,
                               cmap=cmap,
                               exp=exp,
                               linewidth=linewidth,
-                              ax=ax)
+                              ax=ax,
+                              avg=avg)
 
 
 def _kaiser_shape(atten):
@@ -1226,7 +1275,7 @@ def partials_transpose(partials: list[np.ndarray], interval: float, inplace=Fals
         out = []
         for p in partials:
             p = p.copy()
-            p[:, 1] *= interval
+            p[:, 1] *= factor
             out.append(p)
         return out
 
@@ -1304,6 +1353,10 @@ class PartialIndex:
             dt: the time resolution of the index. The lower this value the faster
                 each query will be but the slower the creation of the index itself
         """
+        if not partials:
+            raise ValueError("partials is empty")
+        if dt <= 0:
+            raise ValueError(f"dt must be > 0, got {dt}")
         start, end = partials_timerange(partials)
         self.start = start
         self.end = end
@@ -1312,10 +1365,13 @@ class PartialIndex:
         firstpartials = []
         startidx = 0
         for t in np.arange(start, end, dt):
-            relidx = _first_partial_after(partials[max(0, startidx-1):], float(t))
-            absidx = startidx + relidx
-            firstpartials.append(absidx)
-            startidx = absidx
+            relidx = _first_partial_after(partials[max(0, startidx - 1):], float(t))
+            if relidx < 0:
+                firstpartials.append(-1)
+            else:
+                absidx = max(0, startidx - 1) + relidx
+                firstpartials.append(absidx)
+                startidx = absidx
         self.firstpartials = firstpartials
 
     def partials_between(self, t0: float, t1: float) -> list[np.ndarray]:
@@ -1329,8 +1385,12 @@ class PartialIndex:
         Returns:
             a list of partials present during the given time range
         """
-        assert t0 <= t1
+        if t0 > t1:
+            raise ValueError(f"t0 ({t0}) must be <= t1 ({t1})")
+        if not self.firstpartials:
+            return []
         idx = int((t0 - self.start) / self.dt)
+        idx = max(0, min(idx, len(self.firstpartials) - 1))
         firstpartial = self.firstpartials[idx]
         if firstpartial < 0:
             return []
@@ -1404,9 +1464,10 @@ def partials_at(partials: list[np.ndarray], t: float, maxcount=0, mindb=-120,
     """
     EPS = 0.000000001
     allbps = [partial_at(partial, t) for partial in partials]
+    allbps = [bp for bp in allbps if bp is not None]
     minamp = db2amp(mindb)
     bps = [
-        bp for bp in allbps if minfreq<=bp[0] < maxfreq and bp[1] > minamp
+        bp for bp in allbps if minfreq <= bp[0] < maxfreq and bp[1] > minamp
     ]
     if maxcount == 0:
         return bps
@@ -1514,8 +1575,10 @@ def chord_to_partials(chord: list[tuple[float, float]], dur: float, fade=0.1,
     start = max(startmargin, 0.001)
     for row in chord:
         freq, ampnow = row
-        assert isinstance(freq, (int, float))
-        assert isinstance(ampnow, (int, float)) and ampnow>=0
+        if not isinstance(freq, (int, float)):
+            raise TypeError(f"freq must be a number, got {type(freq)}")
+        if not isinstance(ampnow, (int, float)) or ampnow < 0:
+            raise ValueError(f"amp must be a non-negative number, got {ampnow!r}")
         mtx = [[0, freq, 0, 0, 0],
                [start, freq, 0, 0, 0],
                [start+fade, freq, ampnow, 0, 0],
@@ -1532,10 +1595,10 @@ def chord_to_partials(chord: list[tuple[float, float]], dur: float, fade=0.1,
 def _get_frame_times(partials: list[np.ndarray]) -> np.ndarray:
     allbps = []
     for i, partial in enumerate(partials):
-        partialidx = np.ones(shape=(len(partial),), dtype=float)*i
-        bps = np.column_stack((partial[:,0], partialidx))
+        partialidx = np.ones(shape=(len(partial),), dtype=float) * i
+        bps = np.column_stack((partial[:, 0], partialidx))
         allbps.append(bps)
-    bparray = np.row_stack(allbps)
+    bparray = np.vstack(allbps)
     bparray = bparray[bparray[:, 0].argsort()]
     seen = set()
     frametimes = [bparray[0, 0]]
@@ -1557,7 +1620,7 @@ def _write_sdif_1trc(partials: list[np.ndarray],
                      fadetime=0.
                      ) -> None:
     if labels:
-        logger.warn("labels are not supported (at the moment) when writing to 1TRC sdif")
+        logger.warning("labels are not supported (at the moment) when writing to 1TRC sdif")
     import pysdif
     sdif = pysdif.SdifFile(outfile, "w")
     sdif.add_NVT({'creator': 'pysdif3'})
@@ -1569,17 +1632,17 @@ def _write_sdif_1trc(partials: list[np.ndarray],
 
     allbps = []
     for i, partial in enumerate(partials):
-        partialidx = np.ones(shape=(len(partial),), dtype=float)*i
+        partialidx = np.ones(shape=(len(partial),), dtype=float) * i
         bps = np.column_stack((partial, partialidx))
         allbps.append(bps)
-    bparray = np.row_stack(allbps)
+    bparray = np.vstack(allbps)
     bparray = bparray[bparray[:, 0].argsort()]
     seen = set()
     startidx = 0
     for i in range(len(bparray)):
         row = bparray[i]
         #       t f a p b i
-        # 1trc: i f a p 
+        # 1trc: i f a p
         idx = int(row[5])
         if idx not in seen:
             seen.add(idx)
@@ -1654,10 +1717,12 @@ def _write_sdif_rbep(partials: list[np.ndarray],
     if labels:
         sdif.add_frame_type("RBEL", ["RBEL PartialLabels"])
         if isinstance(labels, list):
-            assert len(labels) == len(partials)
+            if len(labels) != len(partials):
+                raise ValueError(f"len(labels) ({len(labels)}) != len(partials) ({len(partials)})")
             labelframe = np.asarray(labels, dtype=float)
         elif isinstance(labels, np.ndarray):
-            assert len(labels.shape) == 1 and labels.shape[0] == len(partials)
+            if not (len(labels.shape) == 1 and labels.shape[0] == len(partials)):
+                raise ValueError("labels array must be 1D with len == len(partials)")
             labelframe = labels
         else:
             raise TypeError(f"Expected a list of ints or a numpy array, got {type(labels)}")
@@ -1665,10 +1730,10 @@ def _write_sdif_rbep(partials: list[np.ndarray],
 
     allbps = []
     for i, partial in enumerate(partials):
-        partialidx = np.ones(shape=(len(partial),), dtype=float)*i
+        partialidx = np.ones(shape=(len(partial),), dtype=float) * i
         bps = np.column_stack((partial, partialidx))
         allbps.append(bps)
-    bparray = np.row_stack(allbps)
+    bparray = np.vstack(allbps)
     bparray = bparray[bparray[:, 0].argsort()]
     seen = set()
     startidx = 0

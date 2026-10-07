@@ -33,7 +33,7 @@ parser.add_argument("--maxfreq", default=5000, type=int,
                     help="Max. freq of a partial")
 
 parser.add_argument("--sortby", default="frequency", type=str,
-                    choices={'frequency', 'amplitude'})
+                    choices=['frequency', 'amplitude'])
 
 parser.add_argument("-s", "--sound", type=str, default="",
                     help="Play / Generate a soundfile with the extracted chord. Use 'dac' to play directly")
@@ -58,16 +58,16 @@ if ext != '.sdif':
 
 partials, labels = loristrck.read_sdif(args.sdiffile)
 
-selected_partials, rest = loristrck.select(partials,
-                                           mindur=args.mindur,
-                                           minamp=args.minamp,
-                                           minfreq=args.minfreq,
-                                           maxfreq=args.maxfreq,
-                                           t0=args.time-0.05,
-                                           t1=args.time+0.05)
+selected_partials, rest = loristrck.util.select(partials,
+                                                mindur=args.mindur,
+                                                minamp=args.minamp,
+                                                minfreq=args.minfreq,
+                                                maxfreq=args.maxfreq,
+                                                t0=args.time - 0.05,
+                                                t1=args.time + 0.05)
 
-bps = loristrck.partials_at(selected_partials, t=args.time, maxcount=args.maxcount)
-chord = loristrck.breakpoints_to_chord(bps, A4=args.a4)
+bps = loristrck.util.partials_at(selected_partials, t=args.time, maxcount=args.maxcount)
+chord = loristrck.util.breakpoints_to_chord(bps, A4=args.a4)
 if args.sortby == "frequency":
     chord.sort(key=lambda note: note[1])
 elif args.sortby == "amplitude":
@@ -82,10 +82,11 @@ for row in chord:
 
 def makePartials(chord, dur, ampoverride=0, margin=0):
     if ampoverride == 0:
-        chord2 = [(freq, loristrck.db2amp(amp)) for note, freq, amp in chord]
+        chord2 = [(freq, loristrck.util.db2amp(amp)) for note, freq, amp in chord]
     else:
         chord2 = [(freq, ampoverride) for note, freq, amp in chord]
-    partials = loristrck.chord_to_partials(chord2, dur=dur, startmargin=margin, fade=args.fade, endmargin=margin)
+    partials = loristrck.util.chord_to_partials(chord2, dur=dur, startmargin=margin,
+                                                fade=args.fade, endmargin=margin)
     return partials
 
 if args.sound:
@@ -101,11 +102,14 @@ if args.sound:
         samples = loristrck.synthesize(partials, samplerate=sr)
         sd.play(samples, sr, blocksize=4096)
         sd.wait()
-            
+
     else:
         partials = makePartials(chord, args.sounddur)
-    
+
         sndfile = args.sound
-        assert os.path.splitext(sndfile)[1] in {'.wav', '.aif', '.aiff'}
-        loristrck.partials_render(partials, sr=44100, outfile=args.sound)
+        if os.path.splitext(sndfile)[1] not in {'.wav', '.aif', '.aiff'}:
+            print(f"Unsupported extension for {sndfile}, expected .wav/.aif/.aiff",
+                  file=sys.stderr)
+            sys.exit(1)
+        loristrck.util.partials_render(partials, sr=44100, outfile=args.sound)
 

@@ -1,4 +1,4 @@
-name: Build 
+name: Build
 
 on: [push, pull_request]
 
@@ -6,19 +6,17 @@ jobs:
   # Make Windows build
   Windows_build_wheels:
     name: Build python wheels on ${{ matrix.os }}
-    runs-on: Windows-latest
+    runs-on: windows-latest
     strategy:
       matrix:
         os: [windows-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # install Visual Studio 2022 Community
-      - name: Install Visual Studio 2022
+      - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
-        
         with:
           arch: x64
 
@@ -27,19 +25,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-
       - name: Prepare Build Loris
         run: |
-          Write-Output "Current Location is $($PWD.Path)"
-          cd "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-          powershell  -NoExit -Command "Import-Module ./Common7/Tools/Microsoft.VisualStudio.DevShell.dll; Enter-VsDevShell d718e166 -SkipAutomaticLocation"
-          cd ${{github.workspace}}
           python scripts/prepare_windows_build.py
-          tree tmp/fftw3 /F
 
       - name: Build wheels
         run: |
-          python -m pip install wheel numpy setuptools cython twine virtualenv packaging pkginfo
+          python -m pip install --upgrade pip wheel numpy setuptools cython
           python setup.py bdist_wheel
 
       - uses: actions/upload-artifact@v4
@@ -48,54 +40,43 @@ jobs:
           path: dist/*.whl
 
       - name: Upload wheels
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TWINETOKEN }}
         run: |
+          python -m pip install twine
           twine upload --skip-existing dist/*.whl
-        continue-on-error: true
 
   build_wheels:
-    name: Build python wheels on ${{ matrix.os }} 
+    name: Build python wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
 
     steps:
+      - uses: actions/checkout@v4
 
-      - uses: actions/checkout@v3
-
-      # Used to host cibuildwheel
       - name: Setup python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      #- name: Install dependencies macos
-      #  if: runner.os == 'macos'
-      #  run: |
-      #      brew update
-      #      brew install fftw
-
       - name: Install cibuildwheel
-        run: python -m pip install cibuildwheel twine virtualenv packaging pkginfo
+        run: python -m pip install cibuildwheel twine
 
-      - name: Build wheels 
+      - name: Build wheels
         env:
           MACOSX_DEPLOYMENT_TARGET: 14.0
-          # Fix delocation error for fftw3
-          CIBW_BUILD: 'cp39-* cp310-* cp311-* cp312-* cp313-*'
-          # We don't build for arm because the fftw lib is still not included
-          # See the cirrus build 
-          CIBW_ARCHS_MACOS: 'x86_64 arm64'
+          CIBW_BUILD: 'cp310-* cp311-* cp312-* cp313-*'
           CIBW_SKIP: 'pp* *686* *-musllinux_*'
           CIBW_BUILD_VERBOSITY: 2
           CIBW_BEFORE_ALL_LINUX: yum install -y fftw-devel
           CIBW_BEFORE_ALL_MACOS: brew update; brew install fftw
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
         run: |
-          python -m cibuildwheel --output-dir wheelhouse    
+          python -m cibuildwheel --output-dir wheelhouse
 
       - uses: actions/upload-artifact@v4
         with:
@@ -103,13 +84,9 @@ jobs:
           path: ./wheelhouse/*.whl
 
       - name: Upload wheels
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         env:
           TWINE_USERNAME: __token__
-          # twine24.4
           TWINE_PASSWORD: ${{ secrets.TWINETOKEN }}
         run: |
-            echo $TWINE_USERNAME
-            echo $TWINE_PASSWORD
-            # python -m pip install -U twine virtualenv
-            twine upload --skip-existing wheelhouse/*.whl
-        continue-on-error: true
+          twine upload --skip-existing wheelhouse/*.whl

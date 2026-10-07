@@ -59,15 +59,17 @@ partials into a number of simultaneous streams, in order to be resynthesized.
 The result is a matrix of at most `maxoscil*3` number of columns, the height of the
 matrix being dependent on the length of the sound and the sampling interval used.
 
-The matrix is saved as an uncompressed .wav file with the format:
+The matrix is saved as an uncompressed .wav file with a header, as written
+by `loristrck.util.matrix_save` (header `[headerSize, numRows, numColumns, ...]`
+followed by optional metadata such as `dt`, `numTracks`, `gap`, `maxActive`).
+See `matrix_save` for the exact layout.
 
-	Header: [dataOffset=5, dt, numcols, numrows, t0] 
+Each data row has the format:
 
-And then the data, a matrix of numcols x numrows, where:
+    time, freq0, amp0, bandwidth0, freq1, amp1, bandwidth1, ...
 
-    numcols = numstreams * 3
-              (each stream consists of three columns: freq, amp and bandwidth)
-    numrows = each row consists of a sample at time t, where t = t0 + row*dt
+where `time` is the frame time `t = t0 + row*dt` and each
+`(freq, amp, bandwidth)` triple is one stream.
 
 This is mostly thought to be used in tandem with csound's beadsynt opcode,
 which performs band-enhanced-additive-synthesis in realtime

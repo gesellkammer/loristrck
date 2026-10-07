@@ -54,13 +54,19 @@ def play_samples(samples, sr):
         sd.play(samples, sr, blocksize=4096)
         sd.wait()
     except ImportError:
-        loristrck.util.open_with_standard_app(sndfile) 
+        with tempfile.NamedTemporaryFile(suffix=".wav", prefix="loristrck-",
+                                          delete=False) as f:
+            fallback = f.name
+        loristrck.util.wavwrite(fallback, samples, sr)
+        loristrck.util.open_with_standard_app(fallback)
 
 
 def play_samples_via_soundfile(samples, sr):
-    outfile = tempfile.mktemp(suffix=".wav", prefix="loristrck-")
-    loristrck.wavwrite(outfile, samples, sr)
-    loristrck.util.open_with_standard_app(sndfile) 
+    with tempfile.NamedTemporaryFile(suffix=".wav", prefix="loristrck-",
+                                      delete=False) as f:
+        outfile = f.name
+    loristrck.util.wavwrite(outfile, samples, sr)
+    loristrck.util.open_with_standard_app(outfile)
     
 
 ext = os.path.splitext(args.inputfile)[1].lower()

@@ -66,7 +66,7 @@ def play_mtx(mtxfile: str, out: str, speed=1., gain=1., freqscale=1.,
         nchnls = 2
         if sys.platform == 'linux':
             if jack_is_running():
-                rtbackend == 'jack'
+                rtbackend = 'jack'
 
     template = string.Template(r"""
 <CsoundSynthesizer>
@@ -115,8 +115,8 @@ instr 1
   endif
   aenv cosseg 0, 0.02, igain, idur-0.02-0.1, igain, 0.1, 0
   aout *= aenv
-  outs aout, aout
-  
+  $outstmt
+
 endin
 
 schedule 1, 0, -1
@@ -126,21 +126,36 @@ schedule 1, 0, -1
 </CsScore>
 </CsoundSynthesizer>
     """)
-    csdstr = template.safe_substitute(out=out, 
-                                      mtxfile=mtxfile, 
+    outstmt = "out aout" if nchnls == 1 else "outs aout, aout"
+    csdstr = template.safe_substitute(out=out,
+                                      mtxfile=mtxfile,
                                       rtbackend=rtbackend,
                                       nchnls=nchnls,
                                       sr=sr,
                                       ksmps=ksmps,
                                       flag=flag,
-                                      speed=str(speed), 
-                                      freqscale=str(freqscale), 
-                                      gain=str(gain))
-    csd = tempfile.mktemp(suffix=".csd", prefix="loristrck-")
-    with open(csd, "w") as f:
+                                      speed=str(speed),
+                                      freqscale=str(freqscale),
+                                      gain=str(gain),
+                                      outstmt=outstmt)
+    with tempfile.NamedTemporaryFile(suffix=".csd", prefix="loristrck-",
+                                     mode="w", delete=False) as f:
+        csd = f.name
         f.write(csdstr)
+    os.chmod(csd, 0o600)
     cmd = [csoundbin, '-d', '-m0', csd]
     if blocking:
-        subprocess.call(cmd)
+        try:
+            subprocess.call(cmd)
+        finally:
+            try:
+                os.unlink(csd)
+            except OSError:
+                pass
     else:
-        return subprocess.Popen(cmd)
+        proc = subprocess.Popen(cmd)
+        try:
+            os.unlink(csd)
+        except OSError:
+            pass
+        return proc

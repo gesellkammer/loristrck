@@ -5,7 +5,6 @@ import sys
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 import matplotlib.cm
-from .common import *
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

@@ -58,21 +58,31 @@ def create_cpp_tree(dest, force=False):
         os.rename(cfile, os.path.splitext(cfile)[0] + ".cpp")
 
 
+def _is_safe_zip_path(base: str, target: str) -> bool:
+    base = os.path.abspath(base)
+    target = os.path.abspath(os.path.join(base, target))
+    return target == base or target.startswith(base + os.sep)
+
+
 def zip_extract(zfile, outfolder):
     outfolder = os.path.abspath(outfolder)
     print(f"Extracting {zfile} to {outfolder}")
     if os.path.exists(outfolder):
         shutil.rmtree(outfolder)
+    os.makedirs(outfolder, exist_ok=True)
     with zipfile.ZipFile(zfile, 'r') as z:
+        for member in z.infolist():
+            if not _is_safe_zip_path(outfolder, member.filename):
+                raise RuntimeError(f"Unsafe zip entry: {member.filename!r}")
         z.extractall(outfolder)
 
 
 def download_fftw(arch: int, outfolder: Path) -> None:
     if arch == 32:
-        url = "ftp://ftp.fftw.org/pub/fftw/fftw-3.3.5-dll32.zip"
+        url = "https://www.fftw.org/pub/fftw/fftw-3.3.10-dll32.zip"
         outfile = tmp_dir / "fftw32.zip"
     else:
-        url = "ftp://ftp.fftw.org/pub/fftw/fftw-3.3.5-dll64.zip"
+        url = "https://www.fftw.org/pub/fftw/fftw-3.3.10-dll64.zip"
         outfile = tmp_dir / "fftw64.zip"
     # fftw_folder = tmp_dir / f"fftw3"
     fftw_folder = outfolder
@@ -90,19 +100,23 @@ def download_fftw(arch: int, outfolder: Path) -> None:
 
 
 def generate_lib_files(fftw_folder: Path, arch=32):
+    import subprocess
     if sys.platform != "win32":
         raise RuntimeError("This operation is only valid in windows")
     cwd = os.getcwd()
     os.chdir(fftw_folder)
-    def_files = Path(".").glob("libfftw3*.def")
-    libexe = shutil.which("lib.exe")
-    if libexe is None:
-        print(os.getenv("PATH"))
-        raise RuntimeError("lib.exe should be in the path")
-    machine = "x86" if arch == 32 else "x64"
-    for def_file in def_files:
-        os.system(f"lib.exe /machine:{machine} /def:{def_file}")
-    os.chdir(cwd)
+    try:
+        def_files = sorted(Path(".").glob("libfftw3*.def"))
+        libexe = shutil.which("lib.exe")
+        if libexe is None:
+            print(os.getenv("PATH"))
+            raise RuntimeError("lib.exe should be in the path")
+        machine = "x86" if arch == 32 else "x64"
+        for def_file in def_files:
+            subprocess.run([libexe, f"/machine:{machine}", f"/def:{def_file}"],
+                           check=True)
+    finally:
+        os.chdir(cwd)
 
 
 # In windows, setuptools seems to need the extensions to be .cpp even

@@ -1,4 +1,6 @@
 site_name: loristrck
+site_url: https://loristrck.readthedocs.io/
+strict: true
 theme:
     name: material
     features:
